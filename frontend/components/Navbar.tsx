@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
-import { Home as HomeIcon, CalendarCheck, Clock, Settings as SettingsIcon, LogIn, UserPlus, LogOut, ShieldCheck } from 'lucide-react';
+import { Home as HomeIcon, CalendarCheck, Clock, Settings as SettingsIcon, LogIn, UserPlus, LogOut, ShieldCheck, History } from 'lucide-react';
 import api from '../lib/api';
 
 export default function Navbar() {
@@ -61,10 +61,16 @@ export default function Navbar() {
             <span>Home</span>
           </Link>
           {user?.role !== 'admin' && (
-            <Link title="Book Ground" className={`group flex items-center gap-2 text-white/90 font-medium text-base px-3 py-2 rounded-md transition-all hover:-translate-y-0.5 ${router.pathname.startsWith('/bookings')?'border-b-2 border-white/80':''}`} href="/bookings">
-              <CalendarCheck size={20} className="opacity-90 group-hover:opacity-100" />
-              <span>Book Ground</span>
-            </Link>
+            <>
+              <Link title="Book Ground" className={`group flex items-center gap-2 text-white/90 font-medium text-base px-3 py-2 rounded-md transition-all hover:-translate-y-0.5 ${router.pathname.startsWith('/bookings')?'border-b-2 border-white/80':''}`} href="/bookings">
+                <CalendarCheck size={20} className="opacity-90 group-hover:opacity-100" />
+                <span>Book Ground</span>
+              </Link>
+              <Link title="History" className={`group flex items-center gap-2 text-white/90 font-medium text-base px-3 py-2 rounded-md transition-all hover:-translate-y-0.5 ${router.pathname==='/history'?'border-b-2 border-white/80':''}`} href="/history">
+                <History size={20} className="opacity-90 group-hover:opacity-100" />
+                <span>History</span>
+              </Link>
+            </>
           )}
           <Link title="Availability" className={`group flex items-center gap-2 text-white/90 font-medium text-base px-3 py-2 rounded-md transition-all hover:-translate-y-0.5 ${router.pathname.startsWith('/availability')?'border-b-2 border-white/80':''}`} href="/availability">
             <Clock size={20} className="opacity-90 group-hover:opacity-100" />
@@ -145,9 +151,14 @@ export default function Navbar() {
               <HomeIcon size={20} /> <span>Home</span>
             </Link>
             {user?.role !== 'admin' && (
-              <Link className="flex items-center gap-2 px-3 py-2 rounded-md text-slate-800 hover:bg-gray-100" href="/bookings" onClick={()=>setMobileOpen(false)}>
-                <CalendarCheck size={20} /> <span>Book Ground</span>
-              </Link>
+              <>
+                <Link className="flex items-center gap-2 px-3 py-2 rounded-md text-slate-800 hover:bg-gray-100" href="/bookings" onClick={()=>setMobileOpen(false)}>
+                  <CalendarCheck size={20} /> <span>Book Ground</span>
+                </Link>
+                <Link className="flex items-center gap-2 px-3 py-2 rounded-md text-slate-800 hover:bg-gray-100" href="/history" onClick={()=>setMobileOpen(false)}>
+                  <History size={20} /> <span>History</span>
+                </Link>
+              </>
             )}
             <Link className="flex items-center gap-2 px-3 py-2 rounded-md text-slate-800 hover:bg-gray-100" href="/availability" onClick={()=>setMobileOpen(false)}>
               <Clock size={20} /> <span>Availability</span>

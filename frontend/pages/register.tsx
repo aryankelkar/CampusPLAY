@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import api from '../lib/api';
-import PageHeader from '../components/common/PageHeader';
+import { ADMIN_EMAIL, ALLOWED_EMAIL_DOMAIN, BRANCHES, DIVISIONS, CLASS_YEARS } from '../constants';
+import { isValidCollegeEmail, isValidRollNumber } from '../utils/helpers';
 
 export default function Register() {
   const router = useRouter();
@@ -15,22 +17,24 @@ export default function Register() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const isAdminEmail = email.trim().toLowerCase() === ADMIN_EMAIL;
+  const isCollegeEmail = isValidCollegeEmail(email.trim().toLowerCase());
+  const rollValid = isAdminEmail ? true : isValidRollNumber(roll.trim().toUpperCase());
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const isValidEmail = (email: string) => {
-      const collegeDomain = '@vit.edu.in';
-      return email.endsWith(collegeDomain) || email === 'admin@campusplay.com';
-    };
-    if (!isValidEmail(email)) {
-      setError('Only official college emails ending with @vit.edu.in are allowed.');
+    if (!isCollegeEmail) {
+      setError(`Only official college emails ending with ${ALLOWED_EMAIL_DOMAIN} are allowed.`);
       return;
     }
-    if (email !== 'admin@campusplay.com') {
-      if (!roll) { setError('Roll number is required.'); return; }
+    if (!isAdminEmail) {
+      if (!rollValid) { setError('Invalid roll format. Example: 24XX1C00XX'); return; }
       if (!branch || !division || !classYear) { setError('Branch, Division, and Class Year are required.'); return; }
     }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     try {
       setLoading(true);
       await api.post('/auth/register', { name, email, password, roll, branch, division, classYear });
@@ -46,43 +50,85 @@ export default function Register() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <PageHeader title="Create an account" subtitle="Use your @vit.edu.in email and roll number" />
-      {error && <div className="mb-3 rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">{error}</div>}
-      {success && <div className="mb-3 rounded border border-green-200 bg-green-50 p-2 text-sm text-green-700">{success}</div>}
-      <form onSubmit={submit} className="card p-4 space-y-4" aria-label="Register form">
-        <div className="grid gap-3 md:grid-cols-2">
-          <input aria-label="Full name" className="input" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} required />
-          <input aria-label="Email" className="input" placeholder="yourname@vit.edu.in" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <input aria-label="Roll Number" className="input" placeholder="e.g., 24XX1C00XX" value={roll} onChange={(e) => setRoll(e.target.value.toUpperCase())} required={email !== 'admin@campusplay.com'} />
-          <input aria-label="Password" className="input" placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          <select aria-label="Branch" className="input" value={branch} onChange={(e)=>setBranch(e.target.value)} required={email !== 'admin@campusplay.com'}>
-            <option value="">Select Branch</option>
-            <option>INFT</option>
-            <option>CMPN</option>
-            <option>EXTC</option>
-            <option>EXCS</option>
-            <option>BIOMED</option>
-          </select>
-          <select aria-label="Division" className="input" value={division} onChange={(e)=>setDivision(e.target.value)} required={email !== 'admin@campusplay.com'}>
-            <option value="">Select Division</option>
-            <option>A</option>
-            <option>B</option>
-            <option>C</option>
-          </select>
-          <select aria-label="Class Year" className="input" value={classYear} onChange={(e)=>setClassYear(e.target.value)} required={email !== 'admin@campusplay.com'}>
-            <option value="">Select Year</option>
-            <option>FE</option>
-            <option>SE</option>
-            <option>TE</option>
-            <option>BE</option>
-          </select>
+    <div className="mx-auto max-w-2xl py-8">
+      <div className="text-center mb-8">
+        <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 shadow-xl mb-4">
+          <span className="text-4xl">🎓</span>
         </div>
-        <div className="text-xs text-gray-600">
-          Only valid VIT student emails allowed. Roll format: 24XX1C00XX.
+        <h1 className="text-3xl font-bold text-slate-800 mb-2">Create Account</h1>
+        <p className="text-gray-600">Join CampusPlay with your @vit.edu.in email</p>
+      </div>
+      {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2"><span>❌</span>{error}</div>}
+      {success && <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700 flex items-center gap-2"><span>✅</span>{success}</div>}
+      <form onSubmit={submit} className="rounded-2xl bg-white/90 backdrop-blur p-6 shadow-xl border border-gray-100 space-y-5" aria-label="Register form">
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">👤 Full Name</label>
+              <input aria-label="Full name" className="input w-full" placeholder="Enter your full name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">📧 Email Address</label>
+              <input aria-label="Email" className="input w-full" placeholder="yourname@vit.edu.in" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              {!isCollegeEmail && email && <div className="mt-1.5 text-xs text-red-600 flex items-center gap-1"><span>⚠️</span>Use your official @vit.edu.in email</div>}
+            </div>
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">🎫 Roll Number</label>
+              <input aria-label="Roll Number" className="input w-full" placeholder="e.g., 24XX1C00XX" value={roll} onChange={(e) => setRoll(e.target.value.toUpperCase())} required={!isAdminEmail} disabled={isAdminEmail} />
+              {!rollValid && !isAdminEmail && roll && <div className="mt-1.5 text-xs text-red-600 flex items-center gap-1"><span>⚠️</span>Invalid format (e.g., 24XX1C00XX)</div>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">🔒 Password</label>
+              <div className="relative">
+                <input aria-label="Password" className="input w-full pr-16" placeholder="Min. 8 characters" type={showPassword? 'text':'password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-600 hover:text-blue-700 font-medium" onClick={()=>setShowPassword(v=>!v)}>{showPassword? 'Hide':'Show'}</button>
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">🏛️ Branch</label>
+              <select aria-label="Branch" className="input w-full" value={branch} onChange={(e)=>setBranch(e.target.value)} required={!isAdminEmail} disabled={isAdminEmail}>
+                <option value="">Select Branch</option>
+                {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">🔢 Division</label>
+              <select aria-label="Division" className="input w-full" value={division} onChange={(e)=>setDivision(e.target.value)} required={!isAdminEmail} disabled={isAdminEmail}>
+                <option value="">Select Division</option>
+                {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">📅 Class Year</label>
+              <select aria-label="Class Year" className="input w-full" value={classYear} onChange={(e)=>setClassYear(e.target.value)} required={!isAdminEmail} disabled={isAdminEmail}>
+                <option value="">Select Year</option>
+                {CLASS_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
-        <button aria-label="Submit registration" className="btn btn-primary w-full disabled:opacity-60" type="submit" disabled={loading}>{loading ? 'Creating...' : 'Create Account'}</button>
+        
+        <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+          <p className="text-xs text-gray-600 flex items-start gap-2">
+            <span className="text-blue-600">💡</span>
+            <span><strong>Note:</strong> Only VIT students can register (@vit.edu.in). Roll format: 24XX1C00XX. Password must be at least 8 characters.</span>
+          </p>
+        </div>
+        
+        <button aria-label="Submit registration" className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-green-500 to-green-600 shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" type="submit" disabled={loading || !name || !isCollegeEmail || (!isAdminEmail && (!rollValid || !branch || !division || !classYear)) || password.length<8}>{loading ? 'Creating Account...' : 'Create Account'}</button>
       </form>
+      
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-600">
+          Already have an account?{' '}
+          <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">Login here</Link>
+        </p>
+      </div>
     </div>
   );
 }

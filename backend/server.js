@@ -39,6 +39,34 @@ app.use('/api/user', userRoutes);
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
+// Root route (friendly message)
+app.get('/', (req, res) => {
+  res.type('html').send(`
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>CampusPlay API</title>
+        <style>
+          body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; color: #0f172a; }
+          .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; max-width: 520px; box-shadow: 0 4px 10px rgba(0,0,0,0.04); }
+          a { color: #2563eb; text-decoration: none; }
+          a:hover { text-decoration: underline; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>CampusPlay API</h1>
+          <p>The API server is running.</p>
+          <p>Health check: <a href="/api/health">/api/health</a></p>
+          <p>Frontend runs at <code> http://localhost:3000 </code></p>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err);

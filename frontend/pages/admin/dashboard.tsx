@@ -66,25 +66,43 @@ function AdminDashboard() {
   useEffect(() => { load(); }, []);
 
   const act = async (id: string, action: 'approve' | 'reject' | 'pending', reason?: string) => {
-    // Optimistic update for smooth motion between sections
-    setRows((prev) => prev.map((r) => (r._id === id ? { ...r, status: action === 'approve' ? 'Approved' : action === 'reject' ? 'Rejected' : 'Pending' } : r)));
     try {
+      let response;
+      
       if (action === 'reject') {
-        await api.patch(`/bookings/${id}/reject`, { reason: reason || '' });
+        response = await api.patch(`/bookings/${id}/reject`, { reason: reason || '' });
       } else if (action === 'approve') {
-        await api.patch(`/bookings/${id}/approve`);
+        response = await api.patch(`/bookings/${id}/approve`);
       } else {
-        await api.patch(`/bookings/${id}/pending`);
+        response = await api.patch(`/bookings/${id}/pending`);
       }
-      setToast({ message: action === 'approve' ? '✅ Booking approved' : action === 'reject' ? '🗑️ Booking rejected' : '⚠️ Booking moved to Pending', type: 'success' });
-      setTimeout(() => setToast(null), 2000);
-      // Refresh in background to ensure consistency
-      setTimeout(() => { load(); }, 300);
-    } catch {
-      // Revert by reloading if API fails
+      
+      // Real-time update: Use the booking data returned from API
+      const updatedBooking = response.data?.data?.booking;
+      
+      if (updatedBooking) {
+        setRows((prev) => prev.map((r) => (r._id === id ? { ...r, ...updatedBooking } : r)));
+      }
+      
+      // Success messages
+      const messages = {
+        approve: '✅ Booking approved successfully',
+        reject: '❌ Booking rejected successfully',
+        pending: '🔄 Booking revoked - moved to pending'
+      };
+      
+      setToast({ message: messages[action], type: 'success' });
+      setTimeout(() => setToast(null), 3000);
+      
+    } catch (error: any) {
+      // Handle specific error messages from backend
+      const errorMessage = error?.response?.data?.message || 'Action failed. Please try again.';
+      
+      setToast({ message: `⚠️ ${errorMessage}`, type: 'error' });
+      setTimeout(() => setToast(null), 4000);
+      
+      // Reload to ensure consistency on error
       load();
-      setToast({ message: 'Action failed. Please try again.', type: 'error' });
-      setTimeout(() => setToast(null), 2000);
     }
   };
 

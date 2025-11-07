@@ -1,11 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
 import ProtectedRoute from '../components/ProtectedRoute';
-import api from '../lib/api';
-import BookingCard from '../components/BookingCard';
 import BookingWizard from '../components/BookingWizard';
-import EmptyState from '../components/common/EmptyState';
-import Loader from '../components/common/Loader';
-import PageHeader from '../components/common/PageHeader';
 
 export default function BookingsPage() {
   return (
@@ -16,134 +12,70 @@ export default function BookingsPage() {
 }
 
 function Bookings() {
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'upcoming' | 'history' | 'cancelled'>('upcoming');
-  const [toast, setToast] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchBookings = async () => {
-    try {
-      setLoading(true);
-      const { data } = await api.get('/bookings');
-      setBookings(data?.data?.bookings || []);
-    } catch {
-      setBookings([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { fetchBookings(); }, []);
-
-  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
-  const upcoming = useMemo(() =>
-    (bookings || [])
-      .filter((b) => b.date >= today)
-      .sort((a, b) => (a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)))
-  , [bookings, today]);
-  const past = useMemo(() =>
-    (bookings || [])
-      .filter((b) => b.date < today && b.status !== 'Cancelled')
-      .sort((a, b) => (a.date === b.date ? b.time.localeCompare(a.time) : b.date.localeCompare(a.date)))
-  , [bookings, today]);
-  const cancelled = useMemo(() => (bookings || []).filter((b)=> b.status === 'Cancelled'), [bookings]);
-  const historyByMonth = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    for (const b of past) {
-      const d = new Date(b.date + 'T00:00:00');
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(b);
-    }
-    // sort keys desc
-    const ordered = Object.keys(groups).sort((a,b)=> b.localeCompare(a));
-    return ordered.map((k)=> ({ key: k, label: new Date(k+'-01T00:00:00').toLocaleString(undefined,{ month:'long', year:'numeric'}), items: groups[k] }));
-  }, [past]);
-
-  const handleCancel = async (id: string) => {
-    try {
-      await api.patch(`/bookings/${id}/cancel`);
-      setToast('❌ Booking cancelled successfully.');
-      setTimeout(()=> setToast(''), 2000);
-      await fetchBookings();
-    } catch {}
+  const handleBookingSuccess = () => {
+    setRefreshKey(prev => prev + 1);
   };
 
   return (
-    <div className="min-h-[calc(100vh-120px)] bg-gradient-to-br from-blue-50 to-emerald-50">
-      {toast && <div className="fixed right-4 top-20 z-50 rounded-lg bg-red-600 px-3 py-2 text-sm text-white shadow">{toast}</div>}
-      <PageHeader title="Book Ground" subtitle="Request a slot and track your bookings" />
-      <div className="grid gap-6 md:grid-cols-2">
-        <div>
-          <BookingWizard onSuccess={fetchBookings} />
+    <div className="min-h-[calc(100vh-120px)] max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="mb-8 text-center">
+        <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 shadow-xl mb-4">
+          <span className="text-4xl">🏏</span>
         </div>
+        <h1 className="text-3xl font-bold text-slate-800 mb-2">Book a Ground</h1>
+        <p className="text-gray-600">Reserve your spot and get ready to play</p>
+      </div>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <button
-              className={`btn ${tab === 'upcoming' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setTab('upcoming')}
-            >My Bookings</button>
-            <button
-              className={`btn ${tab === 'history' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setTab('history')}
-            >Booking History</button>
-            {cancelled.length > 0 && (
-              <button
-                className={`btn ${tab === 'cancelled' ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setTab('cancelled')}
-              >Cancelled Bookings</button>
-            )}
+      {/* Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 p-5 border border-blue-200 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">🎮</div>
+            <div>
+              <div className="text-sm font-medium text-blue-600">Step 1</div>
+              <div className="text-xs text-blue-800">Choose sport & ground</div>
+            </div>
           </div>
-
-          {loading ? (
-            <Loader className="py-6" />)
-          : (
-            <div className={`transition-opacity duration-300 ${tab === 'upcoming' ? 'opacity-100' : 'opacity-0 hidden'} space-y-3`}>
-              <h2 className="text-xl font-semibold">Upcoming</h2>
-              {upcoming.length === 0 ? (
-                <EmptyState title="No upcoming bookings" subtitle="Your approved or pending bookings will appear here" />
-              ) : (
-                upcoming.map((b) => (
-                  <BookingCard key={b._id} booking={b} onCancel={handleCancel} />
-                ))
-              )}
+        </div>
+        <div className="rounded-2xl bg-gradient-to-br from-green-50 to-green-100 p-5 border border-green-200 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">📅</div>
+            <div>
+              <div className="text-sm font-medium text-green-600">Step 2</div>
+              <div className="text-xs text-green-800">Pick date & time slot</div>
             </div>
-          )}
-
-          {!loading && (
-            <div className={`transition-opacity duration-300 ${tab === 'history' ? 'opacity-100' : 'opacity-0 hidden'} space-y-4`}>
-              <h2 className="text-xl font-semibold">History</h2>
-              {historyByMonth.length === 0 ? (
-                <EmptyState title="No past bookings" subtitle="Once a booking date passes, it will show here" />
-              ) : (
-                historyByMonth.map((group) => (
-                  <div key={group.key} className="space-y-2">
-                    <div className="mt-2 text-sm font-medium text-slate-700">{group.label}</div>
-                    {group.items.map((b: any) => {
-                      const tag = b.status === 'Approved' ? 'Completed' : 'Missed';
-                      return (
-                        <BookingCard key={b._id} booking={b} viewOnly tag={tag} showReceipt />
-                      );
-                    })}
-                  </div>
-                ))
-              )}
+          </div>
+        </div>
+        <div className="rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 p-5 border border-purple-200 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">👥</div>
+            <div>
+              <div className="text-sm font-medium text-purple-600">Step 3</div>
+              <div className="text-xs text-purple-800">Add team members</div>
             </div>
-          )}
+          </div>
+        </div>
+      </div>
 
-          {!loading && (
-            <div className={`transition-opacity duration-300 ${tab === 'cancelled' ? 'opacity-100' : 'opacity-0 hidden'} space-y-3`}>
-              <h2 className="text-xl font-semibold">Cancelled Bookings</h2>
-              {cancelled.length === 0 ? (
-                <EmptyState title="No cancelled bookings" subtitle="Your cancelled bookings will appear here" />
-              ) : (
-                cancelled.map((b) => (
-                  <BookingCard key={b._id} booking={b} viewOnly tag={b.canceledAt ? `Cancelled on ${new Date(b.canceledAt).toLocaleDateString()}` : 'Cancelled'} />
-                ))
-              )}
-            </div>
-          )}
+      {/* Booking Wizard */}
+      <BookingWizard key={refreshKey} onSuccess={handleBookingSuccess} />
+
+      {/* Quick Links */}
+      <div className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-1">Need to check your bookings?</h3>
+            <p className="text-sm text-gray-600">View your booking status and history</p>
+          </div>
+          <Link 
+            href="/history" 
+            className="px-6 py-3 rounded-xl bg-white text-indigo-600 hover:bg-indigo-50 font-semibold shadow-sm hover:shadow transition-all flex items-center gap-2 border border-indigo-200"
+          >
+            <span>📚</span> View History
+          </Link>
         </div>
       </div>
     </div>

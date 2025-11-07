@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
+import { ERROR_MESSAGES } from '../constants/index.js';
 
 export const getProfile = async (req, res) => {
   try {
@@ -7,7 +8,7 @@ export const getProfile = async (req, res) => {
     if (!user) return sendError(res, 'User not found', 404);
     return sendSuccess(res, { user }, 'Profile');
   } catch (err) {
-    return sendError(res, 'Server error', 500);
+    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
   }
 };
 
@@ -27,7 +28,7 @@ export const updateProfile = async (req, res) => {
     delete safe.password;
     return sendSuccess(res, { user: safe }, 'Profile updated');
   } catch (err) {
-    return sendError(res, 'Server error', 500);
+    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
   }
 };
 
@@ -46,6 +47,6 @@ export const changePassword = async (req, res) => {
     await user.save();
     return sendSuccess(res, null, 'Password updated');
   } catch (err) {
-    return sendError(res, 'Server error', 500);
+    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
   }
 };
