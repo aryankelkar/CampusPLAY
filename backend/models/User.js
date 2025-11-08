@@ -7,7 +7,18 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['student', 'admin'], default: 'student' },
-    roll: { type: String, required: true, unique: true },
+    roll: { 
+      type: String, 
+      required: true, 
+      unique: true,
+      maxlength: [10, 'Roll number cannot exceed 10 characters'],
+      validate: {
+        validator: function(v) {
+          return /^[A-Za-z0-9]{1,10}$/.test(v);
+        },
+        message: 'Roll number must be alphanumeric and up to 10 characters'
+      }
+    },
     branch: { type: String, enum: ['INFT', 'CMPN', 'EXTC', 'EXCS', 'BIOMED'], required: true },
     division: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
     classYear: { type: String, enum: ['FE', 'SE', 'TE', 'BE'], required: true },

@@ -4,13 +4,15 @@
 
 A full-stack web application to simplify sports ground management with booking requests, admin approvals, and real-time availability tracking.
 
-> ✨ **Recently Optimized**: Code refactored for production readiness with centralized constants, reusable utilities, and consistent UI/UX. See [OPTIMIZATION_REPORT.md](./OPTIMIZATION_REPORT.md) for details.
+> ✨ **Production Ready**: Fully optimized with Socket.io real-time updates, service layer architecture, and comprehensive deployment guides. See [OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md) for complete details.
 
-## Tech Stack
-- Frontend: Next.js (TypeScript) + Tailwind CSS
-- Backend: Node.js + Express.js + Mongoose
-- Database: MongoDB
-- Auth: JWT in HttpOnly cookies
+## 🚀 Tech Stack
+- **Frontend**: Next.js 14 (TypeScript) + Tailwind CSS + Socket.io-client
+- **Backend**: Node.js + Express.js + Mongoose + Socket.io
+- **Database**: MongoDB (Atlas ready)
+- **Auth**: JWT in HttpOnly cookies
+- **Real-time**: Socket.io for live updates
+- **Fonts**: Next.js Font Optimization (Inter & Poppins)
 
 ## Prerequisites
 - Node.js 18+
@@ -49,6 +51,7 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 - 📊 Booking history grouped by month
 - ⚙️ Profile settings and password management
 - 📱 Fully responsive mobile design
+- ⚡ **Real-time status updates** - See booking approvals instantly
 
 ### For Admins
 - 📋 Unified dashboard with all booking requests
@@ -57,6 +60,8 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 - 🔄 Revoke decisions (move back to pending)
 - 📝 Audit trail for status changes
 - 🎨 Interactive summary cards with counters
+- ⚡ **Real-time notifications** - New bookings appear instantly
+- 🔒 Conflict detection before approval
 
 ## 🔌 API Endpoints
 
@@ -83,29 +88,36 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 ## 📝 Technical Notes
 
 ### Architecture
-- **Backend**: RESTful API with Express.js
-- **Frontend**: Server-side rendered Next.js app
+- **Backend**: RESTful API with Express.js + Service Layer
+- **Frontend**: Server-side rendered Next.js app with Socket.io
 - **Database**: MongoDB with Mongoose ODM
 - **Auth**: JWT stored in HttpOnly cookies
+- **Real-time**: Socket.io with room-based broadcasting
 - **Validation**: express-validator + client-side checks
 - **Styling**: Tailwind CSS with custom design system
 - **Animations**: framer-motion for smooth transitions
+- **Fonts**: Optimized with next/font (Inter & Poppins)
 
 ### Code Organization
+- **Services**: Business logic layer (`backend/services/`)
 - **Constants**: Centralized configuration in `constants/` folders
 - **Utilities**: Reusable helpers in `utils/` folders
 - **Components**: Modular React components
+- **Context**: Socket.io and Auth providers
 - **Type Safety**: TypeScript for frontend
 
 ### Design System
-- Colors: Blue primary, green success, red error
-- Status badges: Consistent across all views
-- Spacing: Uniform padding/margins
-- Shadows: Consistent card elevations
+- **Colors**: Green/blue gradients for campus aesthetic
+- **Typography**: Poppins (headings) + Inter (body)
+- **Status badges**: Consistent across all views
+- **Spacing**: Uniform padding/margins
+- **Effects**: Glassmorphism, smooth transitions
 
 ## 📚 Documentation
-- [OPTIMIZATION_REPORT.md](./OPTIMIZATION_REPORT.md) - Detailed refactoring documentation
-- [IMPROVEMENTS_SUMMARY.md](./IMPROVEMENTS_SUMMARY.md) - Quick reference guide
+- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Complete deployment instructions for Render/Railway
+- **[OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)** - Full optimization and refactoring details
+- **[OPTIMIZATION_REPORT.md](./OPTIMIZATION_REPORT.md)** - Previous optimization documentation
+- **[IMPROVEMENTS_SUMMARY.md](./IMPROVEMENTS_SUMMARY.md)** - Quick reference guide
 
 ## 🎓 Default Credentials
 **Admin Account** (created via seed script):
@@ -118,27 +130,48 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 
 ## 🚀 Production Deployment
 
-### Environment Variables
+> **📖 See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for complete step-by-step deployment instructions**
+
+### Quick Environment Setup
+
 **Backend** (`.env`):
 ```env
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
 PORT=5000
+NODE_ENV=production
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/campusplay
+JWT_SECRET=your_super_secret_jwt_key_minimum_32_characters
 CORS_ORIGIN=https://your-frontend-url.com
+ADMIN_EMAIL=admin@vit.edu.in
 ```
 
 **Frontend** (`.env.local`):
 ```env
-NEXT_PUBLIC_API_BASE=https://your-api-url.com/api
+NEXT_PUBLIC_API_URL=https://your-backend-url.com
 ```
 
 ### Build Commands
 ```bash
 # Backend
-cd backend && npm start
+cd backend
+npm install
+npm start
 
 # Frontend
-cd frontend && npm run build && npm start
+cd frontend
+npm install
+npm run build
+npm start
+```
+
+### Deployment Platforms
+- **Backend**: Render, Railway, Heroku
+- **Frontend**: Vercel, Netlify
+- **Database**: MongoDB Atlas
+
+### Health Check
+```bash
+curl https://your-backend-url.com/api/health
+# Should return: {"status":"ok"}
 ```
 
 ## 🤝 Contributing

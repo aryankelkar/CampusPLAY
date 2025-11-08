@@ -66,10 +66,10 @@ export function isValidCollegeEmail(email: string, allowAdmin = true): boolean {
 }
 
 /**
- * Validate roll number format
+ * Validate roll number format - Allow any alphanumeric string up to 10 characters
  */
 export function isValidRollNumber(roll: string): boolean {
-  return /^\d{2}[A-Z]{2}\d[A-Z]\d{2}[A-Z]{2}$/.test(roll);
+  return /^[A-Za-z0-9]{1,10}$/.test(roll);
 }
 
 /**

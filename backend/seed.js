@@ -9,23 +9,26 @@ const seed = async () => {
   try {
     await connectDB();
     const adminEmail = 'admin@campusplay.com';
-    const adminRoll = 'ADMIN-000';
+    const adminRoll = 'ADMIN000'; // Changed to alphanumeric only (no hyphen)
 
     let existing = await User.findOne({ email: adminEmail });
     if (!existing) {
-      await User.create({ name: 'Admin', email: adminEmail, password: 'admin123', role: 'admin', roll: adminRoll });
-      console.log('Admin user created');
+      await User.create({ 
+        name: 'Admin', 
+        email: adminEmail, 
+        password: 'admin123', 
+        role: 'admin', 
+        roll: adminRoll,
+        branch: 'INFT',      // Required field
+        division: 'A',       // Required field
+        classYear: 'BE'      // Required field
+      });
+      console.log('✅ Admin user created successfully');
     } else {
-      if (!existing.roll) {
-        existing.roll = adminRoll;
-        await existing.save();
-        console.log('Admin user updated with roll');
-      } else {
-        console.log('Admin user already exists');
-      }
+      console.log('ℹ️  Admin user already exists');
     }
   } catch (e) {
-    console.error(e);
+    console.error('❌ Error creating admin user:', e.message);
   } finally {
     await mongoose.connection.close();
     process.exit(0);

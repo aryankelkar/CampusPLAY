@@ -31,7 +31,7 @@ export default function Register() {
       return;
     }
     if (!isAdminEmail) {
-      if (!rollValid) { setError('Invalid roll format. Example: 24XX1C00XX'); return; }
+      if (!rollValid) { setError('Invalid roll number. Must be alphanumeric (1-10 characters)'); return; }
       if (!branch || !division || !classYear) { setError('Branch, Division, and Class Year are required.'); return; }
     }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
@@ -77,8 +77,8 @@ export default function Register() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">🎫 Roll Number</label>
-              <input aria-label="Roll Number" className="input w-full" placeholder="e.g., 24XX1C00XX" value={roll} onChange={(e) => setRoll(e.target.value.toUpperCase())} required={!isAdminEmail} disabled={isAdminEmail} />
-              {!rollValid && !isAdminEmail && roll && <div className="mt-1.5 text-xs text-red-600 flex items-center gap-1"><span>⚠️</span>Invalid format (e.g., 24XX1C00XX)</div>}
+              <input aria-label="Roll Number" className="input w-full" placeholder="e.g., 2024CS001 or ABC123" value={roll} onChange={(e) => setRoll(e.target.value.toUpperCase())} required={!isAdminEmail} disabled={isAdminEmail} maxLength={10} />
+              {!rollValid && !isAdminEmail && roll && <div className="mt-1.5 text-xs text-red-600 flex items-center gap-1"><span>⚠️</span>Alphanumeric only, max 10 characters</div>}
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">🔒 Password</label>

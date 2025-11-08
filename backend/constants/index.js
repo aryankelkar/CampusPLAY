@@ -39,8 +39,8 @@ export const BRANCHES = ['INFT', 'CMPN', 'EXTC', 'EXCS', 'BIOMED'];
 export const DIVISIONS = ['A', 'B', 'C', 'D'];
 export const CLASS_YEARS = ['FE', 'SE', 'TE', 'BE'];
 
-// Roll Number Pattern
-export const ROLL_NUMBER_PATTERN = /^\d{2}[A-Z]{2}\d[A-Z]\d{2}[A-Z]{2}$/;
+// Roll Number Pattern - Allow any alphanumeric string up to 10 characters
+export const ROLL_NUMBER_PATTERN = /^[A-Za-z0-9]{1,10}$/;
 
 // Error Messages
 export const ERROR_MESSAGES = {

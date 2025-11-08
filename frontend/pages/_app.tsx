@@ -4,7 +4,23 @@ import Navbar from '../components/Navbar';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { AuthProvider } from '../context/AuthContext';
+import { SocketProvider } from '../context/SocketContext';
 import Head from 'next/head';
+import { Inter, Poppins } from 'next/font/google';
+
+const inter = Inter({ 
+  subsets: ['latin'], 
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const poppins = Poppins({ 
+  subsets: ['latin'], 
+  weight: ['500', '600', '700'],
+  variable: '--font-poppins',
+  display: 'swap',
+});
 
 export default function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -25,26 +41,24 @@ export default function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <AuthProvider>
-      <div className="flex min-h-screen flex-col">
-        <Head>
-          <title>CampusPlay</title>
-          <meta name="theme-color" content="#2563EB" />
-          <link rel="icon" href="/logo.png" />
-          <link rel="apple-touch-icon" href="/logo.png" />
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
-        </Head>
-        {routeLoading && (
-          <div className="fixed inset-x-0 top-0 z-50">
-            <div className="h-1 w-full animate-pulse bg-blue-600" />
-          </div>
-        )}
-        <Navbar />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
-          <Component {...pageProps} />
-        </main>
-      </div>
+      <SocketProvider>
+        <div className={`flex min-h-screen flex-col ${inter.variable} ${poppins.variable}`}>
+          <Head>
+            <title>CampusPlay</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <meta name="theme-color" content="#2563EB" />
+          </Head>
+          {routeLoading && (
+            <div className="fixed inset-x-0 top-0 z-50">
+              <div className="h-1 w-full animate-pulse bg-blue-600" />
+            </div>
+          )}
+          <Navbar />
+          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+            <Component {...pageProps} />
+          </main>
+        </div>
+      </SocketProvider>
     </AuthProvider>
   );
 }

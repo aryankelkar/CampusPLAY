@@ -40,7 +40,8 @@ export default function BookingCard({
   const badgeClass = getStatusBadgeClass(booking.status);
   const statusIcon = STATUS_ICONS[booking.status];
   return (
-    <div className="group rounded-2xl bg-white/90 backdrop-blur p-5 shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-blue-200">
+    <>
+    <div className="group rounded-2xl bg-white/90 backdrop-blur p-5 shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-blue-200 relative">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
@@ -69,11 +70,13 @@ export default function BookingCard({
           </div>
         </div>
         <div className="flex flex-col gap-2 items-end">
-          {!viewOnly && onCancel && booking.status === BOOKING_STATUS.PENDING && (
+          {!viewOnly && onCancel && (booking.status === BOOKING_STATUS.PENDING || booking.status === BOOKING_STATUS.APPROVED) && (
             <button
-              className="px-4 py-1.5 rounded-lg text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
+              className="px-4 py-1.5 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all shadow-sm hover:shadow-md"
               onClick={() => setConfirmOpen(true)}
-            >Cancel</button>
+            >
+              Cancel Booking
+            </button>
           )}
           <button 
             className="px-4 py-1.5 rounded-lg text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
@@ -202,15 +205,26 @@ export default function BookingCard({
         </div>
       )}
 
-      <ConfirmModal
-        open={confirmOpen}
-        title={'⚠️ Cancel Booking'}
-        description={<div className="text-sm">Are you sure you want to cancel this booking? This action cannot be undone.</div>}
-        confirmText="Yes, Cancel Booking"
-        cancelText="No, Keep It"
-        onCancel={() => setConfirmOpen(false)}
-        onConfirm={() => { setConfirmOpen(false); onCancel && onCancel(booking._id); }}
-      />
     </div>
+
+    <ConfirmModal
+      open={confirmOpen}
+      title={'⚠️ Cancel Booking'}
+      description={
+        <div className="text-sm space-y-3">
+          <p className="text-gray-700">Are you sure you want to cancel your booking for:</p>
+          <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-left">
+            <div><span className="font-semibold text-gray-900">{booking.game}</span> at <span className="font-semibold text-gray-900">{booking.ground}</span></div>
+            <div className="text-xs text-gray-600">{booking.date} • {booking.time}</div>
+          </div>
+          <p className="text-red-600 font-medium">Once cancelled, this action cannot be undone.</p>
+        </div>
+      }
+      confirmText="Yes, Cancel Booking"
+      cancelText="No, Keep Booking"
+      onCancel={() => setConfirmOpen(false)}
+      onConfirm={() => { setConfirmOpen(false); onCancel && onCancel(booking._id); }}
+    />
+    </>
   );
 }

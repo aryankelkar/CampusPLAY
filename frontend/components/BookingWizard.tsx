@@ -2,11 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import api from '../lib/api';
 import { GAMES, GROUNDS, TIME_SLOTS, BOOKING_STATUS, MAX_TEAM_MEMBERS } from '../constants';
-import { getTodayDate, extractSlotHour, isToday } from '../utils/helpers';
+import { getTodayDate, extractSlotHour } from '../utils/helpers';
+import { useSocket } from '../context/SocketContext';
 
 export default function BookingWizard({ onSuccess }: { onSuccess: () => void }) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
+  const { socket } = useSocket();
   const [me, setMe] = useState<any>(null);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
@@ -20,10 +22,10 @@ export default function BookingWizard({ onSuccess }: { onSuccess: () => void }) 
   const [slots, setSlots] = useState<{ slot: string; status: 'Vacant' | 'Booked'; bookedBy?: string | null; game?: string | null }[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [toast, setToast] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [successOverlay, setSuccessOverlay] = useState(false);
+  const [overlayLoading, setOverlayLoading] = useState(false);
   const [confirmation, setConfirmation] = useState<{ game: string; ground: string; date: string; time: string } | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
 
@@ -48,14 +50,29 @@ export default function BookingWizard({ onSuccess }: { onSuccess: () => void }) 
     }
   };
 
+  // Auto-redirect after overlay appears
   useEffect(() => {
-    if (modalOpen) {
-      const t = setTimeout(() => {
-        router.push('/bookings');
-      }, 3000);
-      return () => clearTimeout(t);
+    if (successOverlay && !overlayLoading) {
+      // Auto-redirect after 2.5 seconds
+      const redirectTimer = setTimeout(() => {
+        console.log('🚀 Auto-redirecting to booking history...');
+        setGame('');
+        setGround('');
+        setDate('');
+        setTime('');
+        setTeamMembers([]);
+        setSuccessOverlay(false);
+        setConfirmation(null);
+        setOverlayLoading(false);
+        onSuccess(); // Call parent handler before redirect
+        router.push('/history');
+      }, 2500);
+
+      return () => {
+        clearTimeout(redirectTimer);
+      };
     }
-  }, [modalOpen, router]);
+  }, [successOverlay, overlayLoading, router, onSuccess]);
 
   const minDate = useMemo(() => new Date().toISOString().split('T')[0], []);
   const isToday = useMemo(() => date === minDate, [date, minDate]);
@@ -94,6 +111,42 @@ export default function BookingWizard({ onSuccess }: { onSuccess: () => void }) 
     fetchSlots();
   }, [date, ground]);
 
+  // Real-time slot updates via Socket.io
+  useEffect(() => {
+    if (!socket || !date || !ground) return;
+
+    const handleBookingUpdate = (data: any) => {
+      console.log('🔄 Real-time booking update received:', data);
+      
+      // Refresh slots if the update affects current selection
+      const booking = data?.booking;
+      if (booking && booking.ground === ground && booking.date === date) {
+        console.log('♻️ Refreshing slots due to booking update...');
+        api.get('/bookings/availability', { params: { date, ground } })
+          .then(({ data }) => {
+            setSlots(data?.data?.slots || []);
+            console.log('✅ Slots refreshed');
+          })
+          .catch((err) => {
+            console.error('❌ Failed to refresh slots:', err);
+          });
+      }
+    };
+
+    // Listen for all booking events
+    socket.on('booking:created', handleBookingUpdate);
+    socket.on('booking:approved', handleBookingUpdate);
+    socket.on('booking:rejected', handleBookingUpdate);
+    socket.on('booking:revoked', handleBookingUpdate);
+
+    return () => {
+      socket.off('booking:created', handleBookingUpdate);
+      socket.off('booking:approved', handleBookingUpdate);
+      socket.off('booking:rejected', handleBookingUpdate);
+      socket.off('booking:revoked', handleBookingUpdate);
+    };
+  }, [socket, date, ground]);
+
   const scrollToTop = () => {
     containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -128,29 +181,108 @@ export default function BookingWizard({ onSuccess }: { onSuccess: () => void }) 
   };
 
   const submit = async () => {
-    setError(''); setSuccess('');
+    // Prevent double submission
+    if (submitting || successOverlay) {
+      console.log('⚠️ Already submitting or overlay shown, ignoring click');
+      return;
+    }
+
+    setError(''); 
     const teamErr = validateTeam();
-    if (teamErr) { setError(teamErr); setStep(3); return; }
+    if (teamErr) { 
+      setError(teamErr); 
+      setStep(3); 
+      setReviewOpen(false); 
+      return; 
+    }
+    
     try {
+      // STEP 1: Disable button and show loading state
       setSubmitting(true);
+      
+      // Save booking details BEFORE API call
+      const bookingDetails = { game, ground, date, time };
+      setConfirmation(bookingDetails);
+      
+      console.log('🔍 Starting booking submission...');
+      console.log('📋 Booking details:', bookingDetails);
+      
+      // STEP 2: Close review modal and show overlay immediately
+      setReviewOpen(false);
+      setOverlayLoading(true);
+      setSuccessOverlay(true);
+      
+      console.log('✨ Overlay shown immediately');
+      
+      // STEP 3: Pre-validate slot availability
+      try {
+        const { data: availData } = await api.get('/bookings/availability', {
+          params: { ground, date }
+        });
+        
+        const selectedSlot = availData?.data?.slots?.find((s: any) => s.slot === time);
+        
+        if (selectedSlot?.status === 'Booked') {
+          console.warn('⚠️ Slot already booked during pre-validation');
+          // Hide overlay and show error
+          setSuccessOverlay(false);
+          setOverlayLoading(false);
+          setError('⚠️ This slot was just booked by another student. Please choose another time slot.');
+          setSubmitting(false);
+          // Refresh slots
+          const { data } = await api.get('/bookings/availability', { params: { date, ground } });
+          setSlots(data?.data?.slots || []);
+          return;
+        }
+        
+        console.log('✅ Slot is still available');
+      } catch (validationErr) {
+        console.warn('⚠️ Could not pre-validate slot, proceeding anyway');
+      }
+      
+      // STEP 4: Submit booking to backend
+      console.log('📤 Sending booking request to backend...');
       await api.post('/bookings', { game, ground, date, time, teamMembers });
-      setSuccess('✅ Booking submitted! Pending admin approval. We\'ll notify you soon.');
-      setToast(`🎉 Booking for ${game} @ ${ground} (${time}) submitted successfully!`);
-      setTimeout(()=> setToast(''), 2500);
-      onSuccess();
-      setModalOpen(true);
-      setConfirmation({ game, ground, date, time });
-      // Clear form to avoid accidental resubmission
-      setGame('');
-      setGround('');
-      setDate('');
-      setTime('');
-      setTeamMembers([]);
-      setStep(1);
+      
+      console.log('✅ Booking created successfully!');
+      
+      // STEP 5: Overlay is already showing, now stop loading state
+      setOverlayLoading(false);
+      setSubmitting(false);
+      
+      console.log('🎉 Overlay will auto-redirect in 2.5 seconds');
+      
+      // Clear any previous errors
+      setError('');
+      
     } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Failed to submit booking';
-      setError(msg);
-    } finally { setSubmitting(false); }
+      console.error('❌ Booking submission failed:', err);
+      
+      const statusCode = err?.response?.status;
+      const msg = err?.response?.data?.message || 'Failed to submit booking. Please try again.';
+      
+      // Hide overlay on error
+      setSuccessOverlay(false);
+      setOverlayLoading(false);
+      setSubmitting(false);
+      
+      // Handle conflict error (409)
+      if (statusCode === 409) {
+        setError(msg); // User-friendly message from backend
+        console.warn('⚠️ Slot conflict detected');
+        
+        // Refresh slots to show updated availability
+        try {
+          const { data } = await api.get('/bookings/availability', { params: { date, ground } });
+          setSlots(data?.data?.slots || []);
+          console.log('♻️ Slots refreshed after conflict');
+        } catch (refreshErr) {
+          console.error('Failed to refresh slots');
+        }
+      } else {
+        setError(msg);
+      }
+    }
   };
 
   return (
@@ -385,13 +517,13 @@ export default function BookingWizard({ onSuccess }: { onSuccess: () => void }) 
           {/* Footer */}
           <div className="flex items-center justify-between pt-2">
             <button className="btn btn-secondary" onClick={prev}>Back</button>
-            <button className="btn btn-primary" disabled={submitting} onClick={()=> setReviewOpen(true)}>{submitting ? 'Submitting...' : 'Confirm Booking'}</button>
+            <button className="btn btn-primary" disabled={submitting} onClick={()=> setReviewOpen(true)}>Review Details</button>
           </div>
         </div>
       )}
 
       {/* Review/Confirmation Modal - Before Submit */}
-      {reviewOpen && (
+      {reviewOpen && !successOverlay && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="text-xl font-bold text-slate-800 mb-4">📋 Review Your Booking</div>
@@ -446,7 +578,7 @@ export default function BookingWizard({ onSuccess }: { onSuccess: () => void }) 
               </button>
               <button 
                 className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                onClick={() => { setReviewOpen(false); submit(); }}
+                onClick={submit}
                 disabled={submitting}
               >
                 {submitting ? 'Submitting...' : 'Confirm Booking'}
@@ -456,25 +588,115 @@ export default function BookingWizard({ onSuccess }: { onSuccess: () => void }) 
         </div>
       )}
 
-      {/* Success Modal - After Submit */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 backdrop-blur-sm p-4 modal-fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl modal-scale-in">
-            <div className="text-2xl font-semibold">✅ Booking submitted</div>
-            <div className="mt-2 text-sm text-gray-700">Your booking has been submitted! We'll notify you when the admin confirms.</div>
+      {/* Modern Success Overlay - After Submit */}
+      {successOverlay && (() => {
+        console.log('🎨 Rendering success overlay - Loading:', overlayLoading);
+        return true;
+      })() && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-md p-4 animate-fade-in">
+          <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl animate-scale-in">
+            
+            {overlayLoading ? (
+              /* Loading State */
+              <>
+                <div className="flex items-center justify-center mb-6">
+                  <div className="relative">
+                    <div className="h-20 w-20 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin"></div>
+                  </div>
+                </div>
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                    Confirming Booking...
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Please wait while we process your request.
+                  </p>
+                </div>
+              </>
+            ) : (
+              /* Success State */
+              <>
+                {/* Animated Checkmark */}
+                <div className="flex items-center justify-center mb-6">
+                  <div className="relative">
+                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center animate-bounce-once shadow-lg">
+                      <svg className="w-12 h-12 text-white animate-check-draw" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div className="absolute inset-0 rounded-full bg-green-400 opacity-30 animate-ping"></div>
+                  </div>
+                </div>
+
+                {/* Title */}
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-3">
+                    ✅ Booking Confirmed!
+                  </h2>
+                  <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                    Your booking has been submitted successfully and is waiting for admin approval.
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Redirecting to Booking History...
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* Booking Summary */}
             {confirmation && (
-              <div className="mt-4 text-sm text-gray-700">
-                <span className="font-medium">{confirmation.game}</span> @ <span className="font-medium">{confirmation.ground}</span>, {confirmation.time} on {formatDate(confirmation.date)}.
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 mb-6 border border-blue-100 shadow-sm">
+                <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-3">Booking Summary</div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 flex items-center gap-2">
+                      <span className="text-base">🏆</span> Sport:
+                    </span>
+                    <span className="font-bold text-gray-900 text-sm">{confirmation.game}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 flex items-center gap-2">
+                      <span className="text-base">📍</span> Ground:
+                    </span>
+                    <span className="font-bold text-gray-900 text-sm">{confirmation.ground}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 flex items-center gap-2">
+                      <span className="text-base">📅</span> Date:
+                    </span>
+                    <span className="font-bold text-gray-900 text-sm">{formatDate(confirmation.date)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 flex items-center gap-2">
+                      <span className="text-base">⏰</span> Time:
+                    </span>
+                    <span className="font-bold text-gray-900 text-sm">{confirmation.time}</span>
+                  </div>
+                </div>
               </div>
             )}
-            <div className="mt-5 progress-bar">
-              <div className="bar" />
-            </div>
-            <div className="mt-2 text-xs text-gray-500">Redirecting to My Bookings…</div>
-            <div className="mt-6 flex justify-end gap-2">
-              <button className="btn btn-ghost border border-blue-300 text-blue-700" onClick={()=> { setModalOpen(false); setStep(1); scrollToTop(); }}>Book Another Ground</button>
-              <button className="btn btn-primary" onClick={()=> { setModalOpen(false); router.push('/bookings'); }}>Go to My Bookings</button>
-            </div>
+
+            {/* Action Button - Only show when not loading */}
+            {!overlayLoading && (
+              <button 
+                className="w-full px-6 py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                onClick={() => { 
+                  console.log('👆 Manual redirect clicked');
+                  setGame('');
+                  setGround('');
+                  setDate('');
+                  setTime('');
+                  setTeamMembers([]);
+                  setSuccessOverlay(false);
+                  setOverlayLoading(false);
+                  setConfirmation(null);
+                  onSuccess(); // Call parent handler before redirect
+                  router.push('/history'); 
+                }}
+              >
+                Go to History →
+              </button>
+            )}
           </div>
         </div>
       )}

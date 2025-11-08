@@ -7,6 +7,7 @@ import EmptyState from '../components/common/EmptyState';
 import Loader from '../components/common/Loader';
 import { BOOKING_STATUS } from '../constants';
 import { getTodayDate, getMonthYearLabel } from '../utils/helpers';
+import { useSocket } from '../context/SocketContext';
 
 export default function HistoryPage() {
   return (
@@ -17,10 +18,13 @@ export default function HistoryPage() {
 }
 
 function BookingHistory() {
+  const { socket } = useSocket();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'approved' | 'rejected' | 'pending' | 'cancelled'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [cancelling, setCancelling] = useState<string | null>(null);
 
   const fetchBookings = async () => {
     try {
@@ -44,6 +48,75 @@ function BookingHistory() {
     
     return () => clearInterval(interval);
   }, []);
+
+  // Real-time Socket.io updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleBookingUpdate = (data: any) => {
+      console.log('🔄 Real-time booking update received:', data);
+      const updatedBooking = data?.booking;
+      
+      if (updatedBooking) {
+        setBookings((prev) => 
+          prev.map((b) => 
+            b._id === updatedBooking._id ? { ...b, ...updatedBooking } : b
+          )
+        );
+      }
+    };
+
+    // Listen for booking events
+    socket.on('booking:cancelled', handleBookingUpdate);
+    socket.on('booking:approved', handleBookingUpdate);
+    socket.on('booking:rejected', handleBookingUpdate);
+    socket.on('booking:created', handleBookingUpdate);
+
+    return () => {
+      socket.off('booking:cancelled', handleBookingUpdate);
+      socket.off('booking:approved', handleBookingUpdate);
+      socket.off('booking:rejected', handleBookingUpdate);
+      socket.off('booking:created', handleBookingUpdate);
+    };
+  }, [socket]);
+
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const handleCancelBooking = async (bookingId: string) => {
+    try {
+      setCancelling(bookingId);
+      const { data } = await api.patch(`/bookings/${bookingId}/cancel`);
+      
+      // Update local state immediately
+      setBookings((prev) =>
+        prev.map((b) =>
+          b._id === bookingId ? { ...b, status: BOOKING_STATUS.CANCELLED } : b
+        )
+      );
+      
+      setToast({ 
+        message: '✅ Booking cancelled successfully. Slot is now available again.', 
+        type: 'success' 
+      });
+      
+      console.log('✅ Booking cancelled:', bookingId);
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.message || 'Unable to cancel booking. Please try again later.';
+      setToast({ 
+        message: `⚠️ ${errorMsg}`, 
+        type: 'error' 
+      });
+      console.error('❌ Error cancelling booking:', err);
+    } finally {
+      setCancelling(null);
+    }
+  };
 
   const today = useMemo(() => getTodayDate(), []);
   
@@ -108,6 +181,26 @@ function BookingHistory() {
 
   return (
     <div className="min-h-[calc(100vh-120px)] max-w-5xl mx-auto pt-6">
+      
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-20 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl border-2 animate-fade-in ${
+          toast.type === 'success' 
+            ? 'bg-green-50 border-green-500 text-green-800' 
+            : 'bg-red-50 border-red-500 text-red-800'
+        }`}>
+          <div className="flex items-center gap-3">
+            <span className="text-lg">{toast.type === 'success' ? '✅' : '⚠️'}</span>
+            <span className="font-medium">{toast.message}</span>
+            <button 
+              onClick={() => setToast(null)}
+              className="ml-2 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Search Bar */}
       {!loading && allBookings.length > 0 && (
@@ -266,7 +359,12 @@ function BookingHistory() {
                       tag = '🚫 Cancelled';
                     }
                     return (
-                      <BookingCard key={b._id} booking={b} viewOnly tag={tag} />
+                      <BookingCard 
+                        key={b._id} 
+                        booking={b} 
+                        tag={tag} 
+                        onCancel={handleCancelBooking}
+                      />
                     );
                   })}
                 </div>

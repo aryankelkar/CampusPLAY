@@ -1,4 +1,6 @@
 import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
 import helmet from 'helmet';
@@ -8,18 +10,45 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import { initializeSocket } from './services/socketService.js';
 
 dotenv.config();
 
+// Validate required environment variables
+const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
+  console.error('💡 Please check your .env file');
+  process.exit(1);
+}
+
+const isProduction = process.env.NODE_ENV === 'production';
+
 const app = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.io
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+  },
+});
+
+initializeSocket(io);
 
 // DB
 connectDB();
 
 // Middlewares
 app.use(helmet());
-app.use(morgan('dev'));
+if (!isProduction) {
+  app.use(morgan('dev'));
+}
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // CORS
@@ -69,10 +98,20 @@ app.get('/', (req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error(err);
+  if (!isProduction) {
+    console.error('❌ Error:', err);
+  }
   const status = err.status || 500;
-  res.status(status).json({ message: err.message || 'Server error' });
+  res.status(status).json({ 
+    success: false,
+    message: err.message || 'Server error',
+    ...((!isProduction && err.stack) && { stack: err.stack })
+  });
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 Socket.io enabled`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+});

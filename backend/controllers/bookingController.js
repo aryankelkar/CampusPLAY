@@ -2,6 +2,8 @@ import { validationResult } from 'express-validator';
 import Booking from '../models/Booking.js';
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
 import { BOOKING_STATUS, MAX_TEAM_MEMBERS, TIME_SLOTS, ERROR_MESSAGES } from '../constants/index.js';
+import * as bookingService from '../services/bookingService.js';
+import { emitBookingUpdate } from '../services/socketService.js';
 
 export const getBookings = async (req, res) => {
   try {
@@ -21,16 +23,31 @@ export const getBookings = async (req, res) => {
 
 export const cancelBooking = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await Booking.findById(req.params.id).populate('student', 'name email roll');
     if (!booking) return sendError(res, 'Booking not found', 404);
+    
+    // Only students can cancel their own bookings
     if (req.user?.role !== 'student') return sendError(res, 'Only students can cancel their bookings', 403);
-    if (String(booking.student) !== String(req.user._id)) return sendError(res, 'Not authorized to cancel this booking', 403);
-    if (booking.status !== BOOKING_STATUS.PENDING) return sendError(res, 'Only pending bookings can be canceled', 400);
+    if (String(booking.student._id) !== String(req.user._id)) return sendError(res, 'Not authorized to cancel this booking', 403);
+    
+    // Allow canceling Pending or Approved bookings
+    if (booking.status !== BOOKING_STATUS.PENDING && booking.status !== BOOKING_STATUS.APPROVED) {
+      return sendError(res, 'Only pending or approved bookings can be cancelled', 400);
+    }
+    
+    // Update booking status
     booking.status = BOOKING_STATUS.CANCELLED;
     booking.canceledAt = new Date();
+    booking.canceledBy = req.user.name || req.user.email;
     await booking.save();
-    return sendSuccess(res, { booking }, 'Booking canceled');
+    
+    // Emit real-time update via Socket.io
+    emitBookingUpdate('booking:cancelled', { booking });
+    
+    console.log(`✅ Booking cancelled by student: ${booking._id}`);
+    return sendSuccess(res, { booking }, 'Booking cancelled successfully. Slot is now available again.');
   } catch (err) {
+    console.error('❌ Error cancelling booking:', err);
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
   }
 };
@@ -86,48 +103,62 @@ export const createBooking = async (req, res) => {
       classYear: req.user?.classYear,
     };
 
+    // ATOMIC CONFLICT CHECK: Check if slot is already booked (Pending or Approved)
+    const existingBooking = await Booking.findOne({
+      ground: req.body.ground,
+      date: req.body.date,
+      time: req.body.time,
+      status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED] }
+    });
+
+    if (existingBooking) {
+      return sendError(res, '⚠️ This slot was just booked by another student. Please choose another time slot.', 409);
+    }
+
     // Enforce server-side snapshot fields; do not allow client to override identity fields
     const booking = await Booking.create({ ...req.body, ...snapshot, teamMembers, student: req.user._id, status: BOOKING_STATUS.PENDING });
+    
+    // Emit real-time update to all connected clients
+    emitBookingUpdate('booking:created', { booking });
+    
     return sendSuccess(res, { booking }, 'Booking created', 201);
   } catch (err) {
+    // Handle duplicate key error from MongoDB unique index
+    if (err.code === 11000) {
+      return sendError(res, '⚠️ This slot was just booked by another student. Please choose another time slot.', 409);
+    }
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
   }
 };
 
 export const approveBooking = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await bookingService.findBookingById(req.params.id);
     if (!booking) return sendError(res, 'Booking not found', 404);
     
     // Check for conflicts before approving
-    const conflict = await Booking.findOne({
-      _id: { $ne: booking._id },
-      ground: booking.ground,
-      date: booking.date,
-      time: booking.time,
-      status: BOOKING_STATUS.APPROVED
-    });
+    const conflict = await bookingService.checkSlotConflict(
+      booking.ground,
+      booking.date,
+      booking.time,
+      booking._id
+    );
     
     if (conflict) {
       return sendError(res, 'This slot is already approved for another booking. Please reject or revoke the conflicting booking first.', 409);
     }
     
-    // Update booking with approval details
-    booking.status = BOOKING_STATUS.APPROVED;
-    booking.approvedBy = req.user?.email || req.user?.name || 'admin';
-    booking.approvedAt = new Date();
+    // Update booking status
+    const updatedBooking = await bookingService.updateBookingStatus(
+      req.params.id,
+      BOOKING_STATUS.APPROVED,
+      { approvedBy: req.user?.email || req.user?.name || 'admin' }
+    );
     
-    // Clear rejection fields when approving
-    booking.rejectionReason = '';
-    booking.rejectedBy = undefined;
-    booking.rejectedAt = undefined;
+    // Emit real-time update
+    emitBookingUpdate('booking:approved', { booking: updatedBooking });
     
-    await booking.save();
-    
-    // Populate student info for response
-    await booking.populate('student', 'name email roll branch division classYear');
-    
-    return sendSuccess(res, { booking }, 'Booking approved');
+    return sendSuccess(res, { booking: updatedBooking }, 'Booking approved');
   } catch (err) {
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
   }
@@ -135,30 +166,25 @@ export const approveBooking = async (req, res) => {
 
 export const rejectBooking = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await bookingService.findBookingById(req.params.id);
     if (!booking) return sendError(res, 'Booking not found', 404);
     
     const reason = req.body?.reason || '';
     
-    // Update booking with rejection details
-    // Clear approval fields if this was previously approved
-    booking.status = BOOKING_STATUS.REJECTED;
-    booking.rejectionReason = reason;
-    booking.rejectedBy = req.user?.email || req.user?.name || 'admin';
-    booking.rejectedAt = new Date();
+    // Update booking status
+    const updatedBooking = await bookingService.updateBookingStatus(
+      req.params.id,
+      BOOKING_STATUS.REJECTED,
+      { 
+        reason,
+        rejectedBy: req.user?.email || req.user?.name || 'admin'
+      }
+    );
     
-    // Clear approval fields when rejecting (important for post-approval rejection)
-    if (booking.approvedAt) {
-      booking.approvedBy = undefined;
-      booking.approvedAt = undefined;
-    }
+    // Emit real-time update
+    emitBookingUpdate('booking:rejected', { booking: updatedBooking });
     
-    await booking.save();
-    
-    // Populate student info for response
-    await booking.populate('student', 'name email roll branch division classYear');
-    
-    return sendSuccess(res, { booking }, 'Booking rejected');
+    return sendSuccess(res, { booking: updatedBooking }, 'Booking rejected');
   } catch (err) {
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
   }
@@ -166,21 +192,17 @@ export const rejectBooking = async (req, res) => {
 
 export const setPending = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id);
+    const booking = await bookingService.findBookingById(req.params.id);
     if (!booking) return sendError(res, 'Booking not found', 404);
     
     const previousStatus = booking.status;
     
-    // Move to pending and clear status-specific fields
-    booking.status = BOOKING_STATUS.PENDING;
-    
-    // Note: We keep approval/rejection history for audit trail
-    // but the status change indicates it's been revoked
-    
-    await booking.save();
-    
-    // Populate student info for response
-    await booking.populate('student', 'name email roll branch division classYear');
+    // Update booking status to pending
+    const updatedBooking = await bookingService.updateBookingStatus(
+      req.params.id,
+      BOOKING_STATUS.PENDING,
+      {}
+    );
     
     const message = previousStatus === BOOKING_STATUS.APPROVED 
       ? 'Booking approval revoked - moved to pending'
@@ -188,7 +210,10 @@ export const setPending = async (req, res) => {
         ? 'Booking rejection revoked - moved to pending'
         : 'Booking moved to pending';
     
-    return sendSuccess(res, { booking }, message);
+    // Emit real-time update
+    emitBookingUpdate('booking:revoked', { booking: updatedBooking, previousStatus });
+    
+    return sendSuccess(res, { booking: updatedBooking }, message);
   } catch (err) {
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
   }
