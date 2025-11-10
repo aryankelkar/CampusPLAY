@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
 import { ERROR_MESSAGES } from '../constants/index.js';
+import { validatePassword } from '../utils/passwordValidator.js';
 
 export const getProfile = async (req, res) => {
   try {
@@ -36,6 +37,12 @@ export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body || {};
     if (!currentPassword || !newPassword) return sendError(res, 'Current and new password are required', 400);
+
+    // Validate new password strength
+    const validation = validatePassword(newPassword);
+    if (!validation.valid) {
+      return sendError(res, validation.message, 400);
+    }
 
     const user = await User.findById(req.user._id);
     if (!user) return sendError(res, 'User not found', 404);

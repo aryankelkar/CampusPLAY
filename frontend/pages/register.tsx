@@ -34,7 +34,11 @@ export default function Register() {
       if (!rollValid) { setError('Invalid roll number. Must be alphanumeric (1-10 characters)'); return; }
       if (!branch || !division || !classYear) { setError('Branch, Division, and Class Year are required.'); return; }
     }
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    // Password validation
+    if (password.length < 8) { setError('Password must be at least 8 characters long'); return; }
+    if (!/[A-Z]/.test(password)) { setError('Password must contain at least one uppercase letter'); return; }
+    if (!/[a-z]/.test(password)) { setError('Password must contain at least one lowercase letter'); return; }
+    if (!/[0-9]/.test(password)) { setError('Password must contain at least one number'); return; }
     try {
       setLoading(true);
       await api.post('/auth/register', { name, email, password, roll, branch, division, classYear });
@@ -116,7 +120,7 @@ export default function Register() {
         <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
           <p className="text-xs text-gray-600 flex items-start gap-2">
             <span className="text-blue-600">💡</span>
-            <span><strong>Note:</strong> Only VIT students can register (@vit.edu.in). Roll format: 24XX1C00XX. Password must be at least 8 characters.</span>
+            <span><strong>Note:</strong> Only VIT students can register (@vit.edu.in). Roll format: 24XX1C00XX. Password must be 8+ characters with uppercase, lowercase, and number.</span>
           </p>
         </div>
         
