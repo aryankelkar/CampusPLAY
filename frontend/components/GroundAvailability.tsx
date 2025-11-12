@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import api from '../lib/api';
 import EmptyState from './common/EmptyState';
-import PageHeader from './common/PageHeader';
 import { GROUNDS } from '../constants';
 
 export default function GroundAvailability() {
@@ -29,21 +28,26 @@ export default function GroundAvailability() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10">
+    <div className="max-w-4xl mx-auto mt-10 animate-fade-in-up">
       <div className="text-center mb-8">
-        <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 shadow-xl mb-4">
-          <span className="text-4xl">📊</span>
+        <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary-600 shadow-sm mb-4">
+          <span className="text-3xl">📊</span>
         </div>
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">Ground Availability</h1>
-        <p className="text-gray-600">Check which time slots are booked or vacant</p>
+        <h1 className="page-title mb-2">Ground Availability</h1>
+        <p className="text-muted">Check which time slots are booked or vacant</p>
       </div>
-      <div className="rounded-2xl bg-white/90 backdrop-blur p-6 shadow-xl border border-gray-100">
-        {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2"><span>❌</span>{error}</div>}
+      <div className="card p-6">
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
+            <span>❌</span>
+            <span>{error}</span>
+          </div>
+        )}
         
         <div className="flex flex-col md:flex-row gap-3 mb-6">
           <div className="flex-1">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">🏟️ Ground</label>
-            <select value={ground} onChange={(e) => setGround(e.target.value)} className="input w-full">
+            <label className="label mb-2 block">🏟️ Ground</label>
+            <select value={ground} onChange={(e) => setGround(e.target.value)} className="input">
               <option value="">Select Ground</option>
               {GROUNDS.map((g) => (
                 <option key={g} value={g}>{g}</option>
@@ -51,24 +55,24 @@ export default function GroundAvailability() {
             </select>
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">📅 Date</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input w-full" />
+            <label className="label mb-2 block">📅 Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input" />
           </div>
           <div className="flex items-end">
-            <button onClick={fetchAvailability} disabled={loading} className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-teal-500 to-teal-600 shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 w-full md:w-auto">
+            <button onClick={fetchAvailability} disabled={loading} className="btn btn-primary px-6 py-3 w-full md:w-auto">
               {loading ? 'Loading...' : 'Check Availability'}
             </button>
           </div>
         </div>
 
         {ground && date && (
-          <div className="mb-4 p-4 rounded-xl bg-blue-50 border border-blue-100 text-sm text-gray-700">
-            🔍 Checking availability for <b className="text-blue-700">{ground}</b> on <b className="text-blue-700">{new Date(date + 'T00:00:00').toDateString()}</b>
+          <div className="mb-4 p-4 rounded-lg bg-primary-50 border border-primary-200 text-sm text-gray-700">
+            🔍 Checking availability for <b className="text-primary-700">{ground}</b> on <b className="text-primary-700">{new Date(date + 'T00:00:00').toDateString()}</b>
           </div>
         )}
 
         <div className="mb-4 flex items-center gap-4 text-sm font-medium">
-          <div className="flex items-center gap-2 text-green-700"><span aria-hidden className="inline-block h-3 w-3 rounded-full bg-green-500 shadow-sm" /> Vacant</div>
+          <div className="flex items-center gap-2 text-secondary-700"><span aria-hidden className="inline-block h-3 w-3 rounded-full bg-secondary-500 shadow-sm" /> Vacant</div>
           <div className="flex items-center gap-2 text-red-700"><span aria-hidden className="inline-block h-3 w-3 rounded-full bg-red-500 shadow-sm" /> Booked (Approved)</div>
         </div>
 
@@ -84,17 +88,17 @@ export default function GroundAvailability() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {availability.map((slot, index) => {
               const isBooked = slot.status === 'Booked';
-              const color = isBooked ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-200' : 'bg-gradient-to-br from-green-50 to-green-100 border-green-200';
-              const textColor = isBooked ? 'text-red-800' : 'text-green-800';
+              const color = isBooked ? 'bg-red-50 border-red-200' : 'bg-secondary-50 border-secondary-200';
+              const textColor = isBooked ? 'text-red-800' : 'text-secondary-800';
               const pill = isBooked ? '🔴 Booked' : '🟢 Vacant';
               return (
-                <div key={index} className={`rounded-2xl border-2 p-4 ${color} hover:shadow-md transition-all`}>
+                <div key={index} className={`card p-4 ${color} hover:shadow-md transition-all`}>
                   <div className={`font-bold text-lg ${textColor} mb-2`}>{slot.slot}</div>
-                  <div className="text-xs font-semibold inline-flex rounded-full bg-white/70 px-2.5 py-1 border border-white/50 shadow-sm mb-2">{pill}</div>
+                  <div className="text-xs font-semibold inline-flex rounded-full bg-white px-2.5 py-1 border border-gray-200 shadow-sm mb-2">{pill}</div>
                   {isBooked && (
                     <div className="text-xs text-gray-700 mt-2 pt-2 border-t border-red-200">
                       <div className="font-medium">{slot.bookedBy || 'Someone'}</div>
-                      {slot.game && <div className="text-gray-600">{slot.game}</div>}
+                      {slot.game && <div className="text-muted">{slot.game}</div>}
                     </div>
                   )}
                 </div>

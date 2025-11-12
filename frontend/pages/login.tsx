@@ -25,7 +25,7 @@ export default function Login() {
     try {
       setLoading(true);
       await api.post('/auth/login', { email, password });
-      router.push('/bookings');
+      router.push('/');
     } catch (err: any) {
       const data = err?.response?.data;
       const firstValidationMsg = Array.isArray(data?.errors) && data.errors.length > 0 ? data.errors[0].msg : '';
@@ -36,38 +36,85 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-120px)] py-8">
-      <div className="w-full max-w-md">
+    <div className="flex items-center justify-center min-h-[calc(100vh-120px)] px-4 py-8">
+      <div className="w-full max-w-md animate-fade-in-up">
         <div className="text-center mb-8">
-          <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-xl mb-4">
-            <span className="text-4xl">🎾</span>
+          <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary-600 shadow-sm mb-4">
+            <span className="text-3xl">🎾</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">Welcome Back!</h1>
-          <p className="text-gray-600">Sign in to your CampusPlay account</p>
+          <h1 className="page-title mb-2">Welcome Back!</h1>
+          <p className="text-muted">Sign in to your CampusPlay account</p>
         </div>
-        {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2"><span>❌</span>{error}</div>}
-        <form onSubmit={submit} className="rounded-2xl bg-white/90 backdrop-blur p-6 shadow-xl border border-gray-100 space-y-5" aria-label="Login form">
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
+            <span>❌</span>
+            <span>{error}</span>
+          </div>
+        )}
+        <form onSubmit={submit} className="card p-6 space-y-5" aria-label="Login form">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-            <input aria-label="Email" className="input w-full" placeholder="yourname@vit.edu.in" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <label className="label mb-2 block">Email Address</label>
+            <input 
+              aria-label="Email" 
+              className="input" 
+              placeholder="yourname@vit.edu.in" 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+            />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+            <label className="label mb-2 block">Password</label>
             <div className="relative">
-              <input aria-label="Password" className="input w-full pr-16" placeholder="Enter your password" type={showPassword?'text':'password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-600 hover:text-blue-700 font-medium" onClick={()=>setShowPassword(v=>!v)}>{showPassword?'Hide':'Show'}</button>
+              <input 
+                aria-label="Password" 
+                className="input pr-20" 
+                placeholder="Enter your password" 
+                type={showPassword ? 'text' : 'password'} 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
+              />
+              <button 
+                type="button" 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors" 
+                onClick={() => setShowPassword(v => !v)}
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
             </div>
           </div>
-          <button aria-label="Submit login" className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" type="submit" disabled={loading || !email || !password}>{loading ? 'Signing in...' : 'Sign In'}</button>
-          <div className="pt-2 space-y-1">
-            <p className="text-center text-xs text-gray-500">💡 Only VIT emails allowed (e.g., yourname@vit.edu.in)</p>
-            <p className="text-center text-xs text-gray-500">🔑 Admin login: admin@campusplay.com / admin123</p>
+          <button 
+            aria-label="Submit login" 
+            className="btn btn-primary w-full py-3" 
+            type="submit" 
+            disabled={loading || !email || !password}
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="spinner"></span>
+                <span>Signing in...</span>
+              </span>
+            ) : (
+              'Sign In'
+            )}
+          </button>
+          <div className="pt-2 space-y-1.5 border-t border-gray-200">
+            <p className="text-center text-xs text-muted flex items-center justify-center gap-1">
+              <span>💡</span>
+              <span>Only VIT emails allowed (e.g., yourname@vit.edu.in)</span>
+            </p>
+            <p className="text-center text-xs text-muted flex items-center justify-center gap-1">
+              <span>🔑</span>
+              <span>Admin login: admin@campusplay.com / admin123</span>
+            </p>
           </div>
         </form>
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted">
             Don't have an account?{' '}
-            <Link href="/register" className="text-blue-600 hover:text-blue-700 font-semibold">Register here</Link>
+            <Link href="/register" className="text-primary-600 hover:text-primary-700 font-semibold transition-colors">Register here</Link>
           </p>
         </div>
       </div>

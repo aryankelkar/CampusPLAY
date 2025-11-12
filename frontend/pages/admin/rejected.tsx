@@ -10,7 +10,9 @@ import EmptyState from '../../components/common/EmptyState';
 export default function RejectedPage() {
   return (
     <ProtectedRoute role="admin">
-      <RejectedView />
+      <div className="px-4 py-6">
+        <RejectedView />
+      </div>
     </ProtectedRoute>
   );
 }

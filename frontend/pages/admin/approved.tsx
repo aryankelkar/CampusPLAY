@@ -10,7 +10,9 @@ import EmptyState from '../../components/common/EmptyState';
 export default function ApprovedPage() {
   return (
     <ProtectedRoute role="admin">
-      <ApprovedView />
+      <div className="px-4 py-6">
+        <ApprovedView />
+      </div>
     </ProtectedRoute>
   );
 }

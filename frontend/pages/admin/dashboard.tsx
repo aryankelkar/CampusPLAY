@@ -10,7 +10,7 @@ import PageHeader from '../../components/common/PageHeader';
 export default function AdminDashboardPage() {
   return (
     <ProtectedRoute role="admin">
-      <div>
+      <div className="max-w-7xl mx-auto px-4 py-6">
         <PageHeader title="Admin Dashboard" subtitle="Manage booking requests and approvals" />
         <AdminDashboard />
       </div>

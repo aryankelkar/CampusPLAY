@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 
 export default function ConfirmModal({
   open,
@@ -17,6 +17,24 @@ export default function ConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  // Keyboard shortcuts: Escape to cancel, Enter to confirm
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCancel();
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        onConfirm();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, onCancel, onConfirm]);
+
   if (!open) return null;
   return (
     <div 
@@ -50,13 +68,13 @@ export default function ConfirmModal({
             className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm sm:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-all duration-200 border-2 border-gray-200 hover:border-gray-300"
             onClick={onCancel}
           >
-            {cancelText}
+            {cancelText} <span className="text-xs opacity-60">(Esc)</span>
           </button>
           <button 
             className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm sm:text-base text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 active:from-red-700 active:to-red-800 shadow-lg hover:shadow-xl transition-all duration-200"
             onClick={onConfirm}
           >
-            {confirmText}
+            {confirmText} <span className="text-xs opacity-75">(Enter)</span>
           </button>
         </div>
       </div>

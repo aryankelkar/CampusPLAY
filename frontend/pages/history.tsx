@@ -4,7 +4,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
 import api from '../lib/api';
 import BookingCard from '../components/BookingCard';
 import EmptyState from '../components/common/EmptyState';
-import Loader from '../components/common/Loader';
+import { ListSkeleton } from '../components/common/LoadingSkeleton';
 import { BOOKING_STATUS } from '../constants';
 import { getTodayDate, getMonthYearLabel } from '../utils/helpers';
 import { useSocket } from '../context/SocketContext';
@@ -180,21 +180,30 @@ function BookingHistory() {
   }, [searchedBookings]);
 
   return (
-    <div className="min-h-[calc(100vh-120px)] max-w-5xl mx-auto pt-6">
+    <div className="min-h-[calc(100vh-120px)] max-w-5xl mx-auto px-4 py-6 animate-fade-in-up">
       
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary-600 shadow-sm mb-4">
+          <span className="text-3xl">📚</span>
+        </div>
+        <h1 className="page-title mb-2">Booking History</h1>
+        <p className="text-muted">View and manage all your bookings</p>
+      </div>
+
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-20 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl border-2 animate-fade-in ${
+        <div className={`fixed top-20 right-4 z-50 px-6 py-4 rounded-lg shadow-2xl animate-slide-in-right ${
           toast.type === 'success' 
-            ? 'bg-green-50 border-green-500 text-green-800' 
-            : 'bg-red-50 border-red-500 text-red-800'
+            ? 'bg-secondary-600 text-white' 
+            : 'bg-red-600 text-white'
         }`}>
           <div className="flex items-center gap-3">
             <span className="text-lg">{toast.type === 'success' ? '✅' : '⚠️'}</span>
             <span className="font-medium">{toast.message}</span>
             <button 
               onClick={() => setToast(null)}
-              className="ml-2 text-gray-500 hover:text-gray-700"
+              className="ml-2 hover:opacity-75 transition-opacity"
             >
               ✕
             </button>
@@ -204,22 +213,23 @@ function BookingHistory() {
 
       {/* Search Bar */}
       {!loading && allBookings.length > 0 && (
-        <div className="mb-4">
+        <div className="mb-6">
           <div className="relative">
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
             <input
               type="text"
               placeholder="Search by game, ground, date or time..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pl-12 rounded-xl border border-gray-200 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+              className="input pl-11 pr-12 w-full"
+              style={{ paddingLeft: '2.75rem' }}
             />
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 ✕
               </button>
@@ -230,53 +240,53 @@ function BookingHistory() {
 
       {/* Filter Tabs */}
       {!loading && allBookings.length > 0 && (
-        <div className="rounded-2xl bg-white/90 backdrop-blur p-2 shadow-md border border-gray-100 mb-6">
+        <div className="card p-2 mb-6">
           <div className="flex flex-wrap gap-2">
             <button
-              className={`flex-1 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 min-w-[110px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
                 filter === 'all'
-                  ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  ? 'bg-primary-600 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => setFilter('all')}
             >
-              All History ({allBookings.length})
+              All ({allBookings.length})
             </button>
             <button
-              className={`flex-1 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 min-w-[110px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
                 filter === 'approved'
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  ? 'bg-secondary-600 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => setFilter('approved')}
             >
               ✅ Approved ({approved.length})
             </button>
             <button
-              className={`flex-1 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 min-w-[110px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
                 filter === 'rejected'
-                  ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  ? 'bg-red-600 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => setFilter('rejected')}
             >
               ❌ Rejected ({rejected.length})
             </button>
             <button
-              className={`flex-1 min-w-[120px] px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 min-w-[110px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
                 filter === 'pending'
-                  ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  ? 'bg-accent-600 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => setFilter('pending')}
             >
               🕒 Pending ({pending.length})
             </button>
             <button
-              className={`flex-1 min-w-[120px] px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 min-w-[110px] px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-150 ${
                 filter === 'cancelled'
-                  ? 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:bg-gray-50'
+                  ? 'bg-gray-600 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
               }`}
               onClick={() => setFilter('cancelled')}
             >
@@ -288,46 +298,52 @@ function BookingHistory() {
 
       {/* Quick Actions */}
       {!loading && allBookings.length > 0 && (
-        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100">
-          <div className="flex-1">
-            <div className="text-sm font-medium text-gray-900">
-              Showing <span className="font-bold text-indigo-600">{searchedBookings.length}</span> of <span className="font-bold">{filteredBookings.length}</span> {filter === 'all' ? 'total' : filter} booking{filteredBookings.length !== 1 ? 's' : ''}
-            </div>
-            {searchQuery && (
-              <div className="text-xs text-gray-500 mt-1">
-                Search results for "{searchQuery}"
+        <div className="mb-6 card p-5 bg-gradient-to-r from-primary-50 to-secondary-50">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex-1">
+              <div className="text-sm font-medium text-primary">
+                Showing <span className="font-bold">{searchedBookings.length}</span> of <span className="font-bold">{filteredBookings.length}</span> {filter === 'all' ? 'total' : filter} booking{filteredBookings.length !== 1 ? 's' : ''}
               </div>
-            )}
+              {searchQuery && (
+                <div className="text-xs text-muted mt-1">
+                  Search results for "{searchQuery}"
+                </div>
+              )}
+            </div>
+            <Link href="/bookings" className="btn btn-primary px-5 py-2 flex items-center gap-2">
+              <span>📅</span> <span>Book New Slot</span>
+            </Link>
           </div>
-          <Link href="/bookings" className="px-4 py-2 rounded-lg bg-white text-indigo-600 hover:bg-indigo-50 font-medium text-sm shadow-sm hover:shadow transition-all flex items-center gap-2 border border-indigo-200">
-            <span>📅</span> Book New Slot
-          </Link>
         </div>
       )}
 
       {/* Content */}
       {loading ? (
-        <Loader className="py-12" />
+        <ListSkeleton count={6} />
       ) : (
         <div className="space-y-6">
           {previousByMonth.length === 0 ? (
-            <div className="rounded-2xl border-2 border-dashed border-gray-300 bg-white/50 p-12 text-center shadow-sm">
+            <div className="card p-12 text-center border-2 border-dashed border-gray-300">
               <div className="text-5xl mb-4">📭</div>
-              <div className="text-xl font-semibold text-gray-700 mb-2">
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">
                 {filter !== 'all' ? `No ${filter.charAt(0).toUpperCase() + filter.slice(1)} Bookings` : 'No bookings yet'}
-              </div>
-              <div className="text-gray-500 mb-4">
+              </h3>
+              <p className="text-muted mb-4">
                 {filter !== 'all' 
                   ? `You don't have any ${filter} bookings`
                   : 'Your booking history will appear here'}
-              </div>
-              {filter !== 'all' && (
+              </p>
+              {filter !== 'all' ? (
                 <button
                   onClick={() => setFilter('all')}
-                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                  className="btn btn-primary"
                 >
                   View All History
                 </button>
+              ) : (
+                <Link href="/bookings" className="btn btn-primary inline-flex">
+                  Book Your First Slot
+                </Link>
               )}
             </div>
           ) : (
@@ -335,10 +351,10 @@ function BookingHistory() {
               <div key={group.key} className="space-y-3">
                 {/* Month Header */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="h-8 w-1 bg-gradient-to-b from-indigo-500 to-indigo-600 rounded-full"></div>
-                  <h2 className="text-2xl font-bold text-slate-800">{group.label}</h2>
+                  <div className="h-8 w-1 bg-gradient-to-b from-primary-600 to-primary-700 rounded-full"></div>
+                  <h2 className="section-title">{group.label}</h2>
                   <div className="flex-1 h-px bg-gray-200"></div>
-                  <span className="text-sm font-medium text-gray-500">{group.items.length} booking{group.items.length !== 1 ? 's' : ''}</span>
+                  <span className="badge badge-gray">{group.items.length} booking{group.items.length !== 1 ? 's' : ''}</span>
                 </div>
                 
                 {/* Bookings for this month */}

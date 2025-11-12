@@ -2,129 +2,516 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 
+  🎨 CampusPlay - Sport & Nature Harmony Theme
+  A modern UI theme blending sporty energy with natural calm
+  Design: Light-dark hybrid with earthy tones + athletic accents
+*/
+
 @layer base {
-  /* Typography improvements with next/font */
+  /* ✍️ Typography - Clean & Confident */
   h1, h2, h3, h4, h5, h6 {
     @apply font-poppins;
     font-weight: 600;
     line-height: 1.2;
+    letter-spacing: 0.03em;
+    color: #14532D; /* Forest green for headings */
   }
   
-  h1 { @apply text-4xl md:text-5xl; }
-  h2 { @apply text-3xl md:text-4xl; }
-  h3 { @apply text-2xl md:text-3xl; }
-  h4 { @apply text-xl md:text-2xl; }
-  h5 { @apply text-lg md:text-xl; }
-  h6 { @apply text-base md:text-lg; }
+  /* Proper font scaling with vertical rhythm */
+  h1 { 
+    font-size: 2.5rem; /* 40px - "Book. Play. Compete." */
+    font-weight: 700;
+  }
+  h2 { font-size: 1.75rem; font-weight: 600; } /* 28px */
+  h3 { font-size: 1.25rem; font-weight: 600; } /* 20px */
+  h4 { font-size: 1.125rem; font-weight: 600; } /* 18px */
+  p { font-size: 1rem; color: #334155; } /* 16px */
   
   p, body {
     @apply font-inter;
     line-height: 1.6;
+    color: #334155;
   }
   
   button, .btn {
     @apply font-poppins;
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
 }
 
+/* 🌿 Base Layout */
 html, body, #__next { height: 100%; }
 body {
-  /* Soft organic gradient */
-  background: linear-gradient(135deg, #E8F5E9 0%, #E3F2FD 100%);
+  background-color: #F0FDF4; /* Muted pale green background */
   min-height: 100vh;
-  color: #1E293B; /* Slate-800 */
+  color: #1E293B;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-.btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 hover:-translate-y-0.5 active:scale-95; }
-/* Primary: soft green gradient */
-.btn-primary { @apply text-white shadow-sm hover:shadow-md; background: linear-gradient(90deg, #4CAF50, #81C784); }
-.btn-primary:hover { filter: brightness(0.95); }
-/* Secondary: #10B981, soft solid tone */
-.btn-secondary { @apply text-white shadow-sm hover:shadow-md; background-color: #10B981; }
-.btn-secondary:hover { background-color: #0EA370; }
-.btn-ghost { @apply text-gray-700 bg-white/0 hover:bg-white/50; }
-.input { @apply w-full rounded-md border border-gray-300 bg-white px-3 py-2 outline-none transition; }
-.input:focus { @apply ring-2 ring-blue-300 border-blue-300; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+/* 🪄 Buttons - Active & Vibrant */
+.btn { 
+  @apply inline-flex items-center justify-center px-6 py-3 text-sm font-semibold;
+  @apply transition-all duration-200 ease-in-out;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  border-radius: 10px;
+  padding: 0.75rem 1.5rem;
+}
 
-/* Typography scale */
-.page-title { font-size: 1.8rem; font-weight: 600; }
-.subheading { font-size: 1.25rem; font-weight: 500; }
-.card-text { font-size: 1rem; }
-.label { font-size: 0.9rem; color: #475569; }
+.btn-primary { 
+  background: linear-gradient(90deg, #22C55E, #2563EB);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+  @apply focus:ring-primary-500;
+}
 
-.card { @apply rounded-xl bg-white shadow transition-all duration-200; }
-.card:hover { box-shadow: 0 6px 16px rgba(0,0,0,0.1); transform: translateY(-1px); }
+.btn-primary:hover {
+  background: linear-gradient(90deg, #16A34A, #1D4ED8);
+  box-shadow: 0 6px 14px rgba(34, 197, 94, 0.4);
+  transform: translateY(-1px) scale(1.03);
+}
 
-.badge { @apply inline-flex items-center rounded-full px-2 py-1 text-xs font-medium; }
-.badge-yellow { @apply bg-yellow-100 text-yellow-800; }
-.badge-green { @apply bg-green-100 text-green-800; }
-.badge-red { @apply bg-red-100 text-red-800; }
+.btn-primary:active {
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
+  transform: translateY(0) scale(1);
+}
 
-/* Navbar glassmorphism */
+.btn-primary:disabled {
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.5), rgba(37, 99, 235, 0.5));
+  box-shadow: none;
+}
+
+.btn-secondary { 
+  background: #F3F4F6;
+  color: #1E293B;
+  border: 1px solid #CBD5E1;
+  font-weight: 600;
+  @apply focus:ring-gray-300;
+}
+
+.btn-secondary:hover {
+  background: #E5E7EB;
+  transform: translateY(-1px);
+}
+
+.btn-outline { 
+  @apply border-2 bg-transparent;
+  border-color: #22C55E;
+  color: #047857;
+  font-weight: 600;
+  @apply hover:bg-primary-50;
+  @apply focus:ring-primary-500;
+}
+
+.btn-ghost { 
+  @apply text-primary-700 bg-transparent;
+  @apply hover:bg-primary-50;
+  @apply transition-all duration-150;
+}
+
+/* 📝 Input Styles - Clean & Accessible */
+.input { 
+  @apply w-full rounded-lg px-3.5 py-2.5;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #1E293B;
+  @apply placeholder:text-muted;
+  @apply outline-none transition-all duration-150;
+}
+
+.input:focus {
+  border-color: #22C55E;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+  background: #FFFFFF;
+}
+
+.input:disabled {
+  background: #F3F4F6;
+  cursor: not-allowed;
+}
+
+/* 📐 Typography Utilities */
+.page-title { 
+  @apply text-3xl font-bold;
+  color: #14532D;
+  letter-spacing: -0.02em;
+}
+
+.section-title { 
+  @apply text-2xl font-semibold;
+  color: #14532D;
+  letter-spacing: -0.01em;
+}
+
+.label { 
+  @apply text-sm font-medium text-gray-700;
+}
+
+/* Gradient Text - Sport Energy */
+.text-gradient-sport {
+  background: linear-gradient(90deg, #22C55E, #2563EB);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+/* 🧩 Cards - Glass Design (Sport & Nature) */
+.card { 
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.card:hover { 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.card-interactive {
+  @apply card cursor-pointer;
+}
+
+.card-interactive:hover {
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.2);
+}
+
+/* Card with Status Stripe */
+.card-status {
+  @apply card;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-status::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.card-status-success::before { background: #22C55E; }
+.card-status-warning::before { background: #FBBF24; }
+.card-status-error::before { background: #DC2626; }
+.card-status-info::before { background: #2563EB; }
+
+/* Badge Styles */
+.badge { 
+  @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
+}
+
+/* Light mode badges - high contrast for visibility */
+.badge-yellow { 
+  background: rgba(251, 191, 36, 0.2); 
+  color: #92400E; 
+  border: 1px solid rgba(251, 191, 36, 0.4); 
+  font-weight: 600;
+}
+.badge-green { 
+  background: rgba(34, 197, 94, 0.2); 
+  color: #14532D; 
+  border: 1px solid rgba(34, 197, 94, 0.4); 
+  font-weight: 600;
+}
+.badge-red { 
+  background: rgba(220, 38, 38, 0.2); 
+  color: #991B1B; 
+  border: 1px solid rgba(220, 38, 38, 0.4); 
+  font-weight: 600;
+}
+.badge-blue { 
+  background: rgba(37, 99, 235, 0.2); 
+  color: #1E40AF; 
+  border: 1px solid rgba(37, 99, 235, 0.4); 
+  font-weight: 600;
+}
+.badge-gray { 
+  background: rgba(100, 116, 139, 0.2); 
+  color: #334155; 
+  border: 1px solid rgba(100, 116, 139, 0.4); 
+  font-weight: 600;
+}
+
+/* 🧭 Navbar - Nature-Tech Fusion (Floating Glass) */
 .navbar-glass {
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.75);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
-.nav-link { @apply transition-colors; }
-.nav-link:hover { color: #065F46; transition: 0.3s ease; }
-.nav-link-active { @apply rounded-full px-3 py-1 underline; }
 
-/* Page container utility */
+/* Static green gradient line at bottom of navbar */
+.navbar-glass::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #22C55E, #2563EB);
+  border-radius: 0 0 12px 12px;
+}
+
+.nav-link { 
+  @apply font-medium transition-all duration-200;
+  color: #475569;
+}
+
+.nav-link:hover { 
+  color: #14532D;
+}
+
+.nav-link-active { 
+  color: #14532D;
+  font-weight: 600;
+}
+
+/* 📄 Page Layout Utilities */
 .page { @apply mx-auto w-full max-w-6xl px-4 py-6; }
+.page-hero { @apply mx-auto w-full max-w-7xl px-4 py-12; }
 
-/* Subtle fade-in for page sections */
+/* ⚡ Animations - Natural Motion (200-250ms) */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in { animation: fadeInUp 400ms ease-out both; }
-
-/* Modal animations */
-@keyframes modalFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes modalScaleIn {
-  from { transform: scale(0.98); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-.modal-fade-in { animation: modalFadeIn 200ms ease-out both; }
-.modal-scale-in { animation: modalScaleIn 220ms ease-out both; }
-
-/* Progress bar (2.5s fill) */
-.progress-bar { height: 4px; width: 100%; background: #E5E7EB; border-radius: 9999px; overflow: hidden; }
-.progress-bar .bar { height: 100%; width: 0%; background: #4CAF50; animation: progressFill 2.5s ease forwards; }
-@keyframes progressFill { from { width: 0%; } to { width: 100%; } }
-
-/* Success Overlay Animations */
-@keyframes bounceOnce {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-.animate-bounce-once { animation: bounceOnce 0.6s ease-out; }
-
-@keyframes checkDraw {
-  0% { stroke-dasharray: 0, 100; }
-  100% { stroke-dasharray: 100, 0; }
-}
-.animate-check-draw { 
-  stroke-dasharray: 100;
-  animation: checkDraw 0.5s ease-out 0.3s forwards; 
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-.animate-fade-in { animation: fadeIn 0.3s ease-out; }
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-fade-in { animation: fadeIn 150ms ease-out both; }
+.animate-fade-in-up { animation: fadeInUp 200ms ease-out both; }
+.animate-slide-up { animation: slideUp 200ms ease-out both; }
+.animate-slide-in-right { animation: slideInRight 200ms ease-out both; }
+.animate-scale-in { animation: modalContentScaleIn 200ms ease-out both; }
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 🎭 Modal Styles - Scale + Fade from Center */
+@keyframes modalBackdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalContentScaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95) translateY(10px);
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-backdrop { 
+  animation: modalBackdropFadeIn 150ms ease-out both;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+.modal-content { 
+  animation: modalContentScaleIn 250ms ease-out both;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Modal with nature-green gradient header */
+.modal-header-gradient {
+  background: linear-gradient(135deg, #ECFDF5, #EFF6FF);
+  border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+  border-radius: 12px 12px 0 0;
+}
+
+/* 📊 Progress Bar - Green Step Indicators */
+.progress-bar { 
+  @apply h-1 w-full rounded-full overflow-hidden;
+  background: #E5E7EB;
+}
+
+.progress-bar .bar { 
+  @apply h-full;
+  background: linear-gradient(90deg, #22C55E, #2563EB);
+  animation: progressFill 2.5s ease forwards; 
+  transition: width 250ms ease;
+}
+
+@keyframes progressFill { 
+  from { width: 0%; } 
+  to { width: 100%; } 
+}
+
+/* Step Progress Tracker */
+.step-indicator {
+  @apply w-8 h-8 rounded-full flex items-center justify-center;
+  @apply font-semibold text-sm transition-all duration-200;
+}
+
+.step-indicator.active {
+  background: linear-gradient(135deg, #22C55E, #10B981);
+  color: white;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.step-indicator.completed {
+  background: #22C55E;
+  color: white;
+}
+
+.step-indicator.pending {
+  background: #F3F4F6;
+  color: #94A3B8;
+  border: 2px solid #E5E7EB;
+}
+
+/* ✅ Success Animations */
+@keyframes checkmarkDraw {
+  0% { stroke-dasharray: 0, 100; opacity: 0; }
+  50% { opacity: 1; }
+  100% { stroke-dasharray: 100, 0; opacity: 1; }
+}
+
+.animate-checkmark { 
+  animation: checkmarkDraw 500ms ease-out forwards; 
+}
 
 @keyframes scaleIn {
   from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
-.animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+.animate-scale-in { animation: scaleIn 200ms ease-out both; }
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+}
+
+.animate-pulse-glow { animation: pulseGlow 1.5s ease-out infinite; }
+
+/* Toast Notifications - Gradient Style */
+.toast {
+  @apply fixed bottom-4 right-4 z-50;
+  @apply px-4 py-3 rounded-lg;
+  @apply flex items-center gap-2;
+  @apply text-sm font-medium;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  animation: slideInRight 200ms ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.toast-success { 
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.9), rgba(22, 163, 74, 0.9));
+  color: #FFFFFF;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.toast-error { 
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9));
+  color: #FFFFFF;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.toast-info { 
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.9), rgba(139, 92, 246, 0.9));
+  color: #FFFFFF;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Loading Spinner */
+.spinner {
+  @apply inline-block w-5 h-5 border-2 border-current border-t-transparent rounded-full;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 🎨 Utility Classes for Text Visibility */
+/* Ensure text is visible on light backgrounds */
+.text-on-light {
+  color: #1E293B !important; /* Deep charcoal */
+}
+
+/* Ensure text is visible on dark backgrounds */
+.text-on-dark {
+  color: #FFFFFF !important;
+}
+
+/* Ensure text is visible on colored backgrounds */
+.text-on-primary {
+  color: #FFFFFF !important; /* White text on green */
+}
+
+.text-on-success {
+  color: #FFFFFF !important; /* White text on green */
+}
+
+.text-on-error {
+  color: #FFFFFF !important; /* White text on red */
+}
+
+.text-on-warning {
+  color: #78350F !important; /* Dark brown on amber */
+}
+
+/* Override any conflicting text colors for better visibility */
+.bg-gradient-sport,
+.btn-primary,
+.badge-green,
+.badge-blue,
+.badge-red {
+  color: #FFFFFF;
+}
+
+.badge-yellow {
+  color: #78350F; /* Dark text for light yellow background */
+}
+
+.badge-gray {
+  color: #475569; /* Medium gray text */
+}

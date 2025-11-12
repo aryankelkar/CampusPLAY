@@ -42,7 +42,7 @@ export default function Register() {
     try {
       setLoading(true);
       await api.post('/auth/register', { name, email, password, roll, branch, division, classYear });
-      setSuccess('✅ Account created successfully! You can now log in using your VIT email.');
+      setSuccess('✅ Account created successfully! Redirecting to login...');
       setTimeout(()=> router.push('/login'), 1500);
     } catch (err: any) {
       const data = err?.response?.data;
@@ -54,62 +54,141 @@ export default function Register() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl py-8">
+    <div className="mx-auto max-w-2xl px-4 py-8 animate-fade-in-up">
       <div className="text-center mb-8">
-        <div className="inline-block p-4 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 shadow-xl mb-4">
-          <span className="text-4xl">🎓</span>
+        <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-secondary-600 shadow-sm mb-4">
+          <span className="text-3xl">🎓</span>
         </div>
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">Create Account</h1>
-        <p className="text-gray-600">Join CampusPlay with your @vit.edu.in email</p>
+        <h1 className="page-title mb-2">Create Account</h1>
+        <p className="text-muted">Join CampusPlay with your @vit.edu.in email</p>
       </div>
-      {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2"><span>❌</span>{error}</div>}
-      {success && <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700 flex items-center gap-2"><span>✅</span>{success}</div>}
-      <form onSubmit={submit} className="rounded-2xl bg-white/90 backdrop-blur p-6 shadow-xl border border-gray-100 space-y-5" aria-label="Register form">
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center gap-2 animate-fade-in">
+          <span>❌</span>
+          <span>{error}</span>
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 rounded-lg border border-secondary-200 bg-secondary-50 p-4 text-sm text-secondary-700 flex items-center gap-2 animate-fade-in">
+          <span>✅</span>
+          <span>{success}</span>
+        </div>
+      )}
+      <form onSubmit={submit} className="card p-6 space-y-5" aria-label="Register form">
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">👤 Full Name</label>
-              <input aria-label="Full name" className="input w-full" placeholder="Enter your full name" value={name} onChange={(e) => setName(e.target.value)} required />
+              <label className="label mb-2 block">👤 Full Name</label>
+              <input 
+                aria-label="Full name" 
+                className="input" 
+                placeholder="Enter your full name" 
+                value={name} 
+                onChange={(e) => setName(e.target.value)} 
+                required 
+              />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">📧 Email Address</label>
-              <input aria-label="Email" className="input w-full" placeholder="yourname@vit.edu.in" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              {!isCollegeEmail && email && <div className="mt-1.5 text-xs text-red-600 flex items-center gap-1"><span>⚠️</span>Use your official @vit.edu.in email</div>}
+              <label className="label mb-2 block">📧 Email Address</label>
+              <input 
+                aria-label="Email" 
+                className="input" 
+                placeholder="yourname@vit.edu.in" 
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                required 
+              />
+              {!isCollegeEmail && email && (
+                <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>Use your official @vit.edu.in email</span>
+                </div>
+              )}
             </div>
           </div>
           
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">🎫 Roll Number</label>
-              <input aria-label="Roll Number" className="input w-full" placeholder="e.g., 2024CS001 or ABC123" value={roll} onChange={(e) => setRoll(e.target.value.toUpperCase())} required={!isAdminEmail} disabled={isAdminEmail} maxLength={10} />
-              {!rollValid && !isAdminEmail && roll && <div className="mt-1.5 text-xs text-red-600 flex items-center gap-1"><span>⚠️</span>Alphanumeric only, max 10 characters</div>}
+              <label className="label mb-2 block">🎫 Roll Number</label>
+              <input 
+                aria-label="Roll Number" 
+                className="input" 
+                placeholder="e.g., 2024CS001 or ABC123" 
+                value={roll} 
+                onChange={(e) => setRoll(e.target.value.toUpperCase())} 
+                required={!isAdminEmail} 
+                disabled={isAdminEmail} 
+                maxLength={10} 
+              />
+              {!rollValid && !isAdminEmail && roll && (
+                <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                  <span>⚠️</span>
+                  <span>Alphanumeric only, max 10 characters</span>
+                </div>
+              )}
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">🔒 Password</label>
+              <label className="label mb-2 block">🔒 Password</label>
               <div className="relative">
-                <input aria-label="Password" className="input w-full pr-16" placeholder="Min. 8 characters" type={showPassword? 'text':'password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-600 hover:text-blue-700 font-medium" onClick={()=>setShowPassword(v=>!v)}>{showPassword? 'Hide':'Show'}</button>
+                <input 
+                  aria-label="Password" 
+                  className="input pr-20" 
+                  placeholder="Min. 8 characters" 
+                  type={showPassword ? 'text' : 'password'} 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  required 
+                />
+                <button 
+                  type="button" 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors" 
+                  onClick={() => setShowPassword(v => !v)}
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
               </div>
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">🏛️ Branch</label>
-              <select aria-label="Branch" className="input w-full" value={branch} onChange={(e)=>setBranch(e.target.value)} required={!isAdminEmail} disabled={isAdminEmail}>
+              <label className="label mb-2 block">🏛️ Branch</label>
+              <select 
+                aria-label="Branch" 
+                className="input" 
+                value={branch} 
+                onChange={(e) => setBranch(e.target.value)} 
+                required={!isAdminEmail} 
+                disabled={isAdminEmail}
+              >
                 <option value="">Select Branch</option>
                 {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">🔢 Division</label>
-              <select aria-label="Division" className="input w-full" value={division} onChange={(e)=>setDivision(e.target.value)} required={!isAdminEmail} disabled={isAdminEmail}>
+              <label className="label mb-2 block">🔢 Division</label>
+              <select 
+                aria-label="Division" 
+                className="input" 
+                value={division} 
+                onChange={(e) => setDivision(e.target.value)} 
+                required={!isAdminEmail} 
+                disabled={isAdminEmail}
+              >
                 <option value="">Select Division</option>
                 {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">📅 Class Year</label>
-              <select aria-label="Class Year" className="input w-full" value={classYear} onChange={(e)=>setClassYear(e.target.value)} required={!isAdminEmail} disabled={isAdminEmail}>
+              <label className="label mb-2 block">📅 Class Year</label>
+              <select 
+                aria-label="Class Year" 
+                className="input" 
+                value={classYear} 
+                onChange={(e) => setClassYear(e.target.value)} 
+                required={!isAdminEmail} 
+                disabled={isAdminEmail}
+              >
                 <option value="">Select Year</option>
                 {CLASS_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
@@ -117,20 +196,34 @@ export default function Register() {
           </div>
         </div>
         
-        <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-          <p className="text-xs text-gray-600 flex items-start gap-2">
-            <span className="text-blue-600">💡</span>
+        <div className="bg-primary-50 rounded-lg p-4 border border-primary-100">
+          <p className="text-xs text-gray-700 flex items-start gap-2">
+            <span className="text-primary-600">💡</span>
             <span><strong>Note:</strong> Only VIT students can register (@vit.edu.in). Roll format: 24XX1C00XX. Password must be 8+ characters with uppercase, lowercase, and number.</span>
           </p>
         </div>
         
-        <button aria-label="Submit registration" className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-green-500 to-green-600 shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" type="submit" disabled={loading || !name || !isCollegeEmail || (!isAdminEmail && (!rollValid || !branch || !division || !classYear)) || password.length<8}>{loading ? 'Creating Account...' : 'Create Account'}</button>
+        <button 
+          aria-label="Submit registration" 
+          className="btn btn-secondary w-full py-3" 
+          type="submit" 
+          disabled={loading || !name || !isCollegeEmail || (!isAdminEmail && (!rollValid || !branch || !division || !classYear)) || password.length < 8}
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="spinner"></span>
+              <span>Creating Account...</span>
+            </span>
+          ) : (
+            'Create Account'
+          )}
+        </button>
       </form>
       
       <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted">
           Already have an account?{' '}
-          <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">Login here</Link>
+          <Link href="/login" className="text-primary-600 hover:text-primary-700 font-semibold transition-colors">Login here</Link>
         </p>
       </div>
     </div>

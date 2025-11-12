@@ -106,18 +106,35 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 - **Context**: Socket.io and Auth providers
 - **Type Safety**: TypeScript for frontend
 
-### Design System
-- **Colors**: Green/blue gradients for campus aesthetic
-- **Typography**: Poppins (headings) + Inter (body)
-- **Status badges**: Consistent across all views
-- **Spacing**: Uniform padding/margins
-- **Effects**: Glassmorphism, smooth transitions
+### Design System - Sport & Nature Harmony Theme 🎨
+- **Theme**: Modern UI blending sporty energy with natural calm
+- **Colors**: Primary Green (#34D399), Accent Blue (#2563EB), Support Orange (#F97316)
+- **Typography**: Poppins (headings, 600-700) + Inter (body, 400-500)
+- **Buttons**: Gradient sport buttons with glow shadows
+- **Cards**: Glass morphism with status stripes (green/amber/red)
+- **Navbar**: Floating semi-transparent with gradient underlines
+- **Animations**: Natural motion (200-250ms, ease-out)
+- **Effects**: Glassmorphism, gradient text, smooth transitions
+- **See**: [THEME_GUIDE.md](./THEME_GUIDE.md) for complete theme documentation
 
 ## 📚 Documentation
+
+### Deployment & Optimization
 - **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Complete deployment instructions for Render/Railway
 - **[OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)** - Full optimization and refactoring details
 - **[OPTIMIZATION_REPORT.md](./OPTIMIZATION_REPORT.md)** - Previous optimization documentation
 - **[IMPROVEMENTS_SUMMARY.md](./IMPROVEMENTS_SUMMARY.md)** - Quick reference guide
+
+### Theme & Design System 🎨
+- **[THEME_GUIDE.md](./THEME_GUIDE.md)** - Complete Sport & Nature Harmony theme guide
+- **[THEME_IMPLEMENTATION.md](./THEME_IMPLEMENTATION.md)** - Implementation summary & technical details
+- **[THEME_QUICK_REFERENCE.md](./THEME_QUICK_REFERENCE.md)** - Quick reference cheat sheet
+- **[COLOR_CONTRAST_FIX.md](./COLOR_CONTRAST_FIX.md)** - Accessibility & visibility fixes
+- **[NAVBAR_CONSISTENCY_FIX.md](./NAVBAR_CONSISTENCY_FIX.md)** - Navbar layout & consistency fixes
+- **[IMAGE_GUIDE.md](./IMAGE_GUIDE.md)** - AI image prompts & visual assets guide
+- **[VISUAL_PAGES_SUMMARY.md](./VISUAL_PAGES_SUMMARY.md)** - Enhanced pages overview
+- **Theme Constants**: `frontend/constants/theme.ts`
+- **Component Examples**: `frontend/components/ThemeExamples.tsx`
 
 ## 🎓 Default Credentials
 **Admin Account** (created via seed script):

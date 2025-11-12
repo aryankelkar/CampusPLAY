@@ -6,7 +6,7 @@ export default function SubNav() {
   const { user } = useAuth();
   const router = useRouter();
   const linkCls = (href: string) =>
-    `rounded-full px-3 py-1 text-sm transition-colors ${router.pathname === href ? 'bg-blue-600 text-white' : 'bg-white/70 text-gray-800 hover:bg-white'}`;
+    `rounded-full px-3 py-1 text-sm transition-colors ${router.pathname === href ? 'bg-gradient-sport text-white' : 'bg-white/70 text-gray-800 hover:bg-white'}`;
 
   return (
     <div className="mb-5 flex flex-wrap items-center gap-2">

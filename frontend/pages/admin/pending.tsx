@@ -10,7 +10,9 @@ import EmptyState from '../../components/common/EmptyState';
 export default function PendingPage() {
   return (
     <ProtectedRoute role="admin">
-      <PendingView />
+      <div className="px-4 py-6">
+        <PendingView />
+      </div>
     </ProtectedRoute>
   );
 }
