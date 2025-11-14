@@ -35,13 +35,28 @@ function PendingView() {
       const { data } = await api.get('/bookings');
       const all = data?.data?.bookings || [];
       setRows(all.filter((b: any) => b.status === 'Pending'));
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+      setRows([]);
     } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
   const act = async (id: string, action: 'approve' | 'reject') => {
-    await api.patch(`/bookings/${id}/${action}`);
-    await load();
+    try {
+      await api.patch(`/bookings/${id}/${action}`);
+      await load();
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+    }
   };
   const requestConfirm = (id: string, action: 'approve' | 'reject') => { setConfirmTarget({ id, action }); setConfirmOpen(true); };
 

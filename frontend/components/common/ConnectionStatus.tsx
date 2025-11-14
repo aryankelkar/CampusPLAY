@@ -1,9 +1,22 @@
+import { useEffect, useState } from 'react';
 import { useSocket } from '../../context/SocketContext';
 
 export default function ConnectionStatus() {
   const { connected } = useSocket();
+  const [show, setShow] = useState(false);
 
-  if (connected) return null;
+  useEffect(() => {
+    let t: any;
+    if (!connected) {
+      t = setTimeout(() => setShow(true), 1500);
+    } else {
+      setShow(false);
+      if (t) clearTimeout(t);
+    }
+    return () => { if (t) clearTimeout(t); };
+  }, [connected]);
+
+  if (connected || !show) return null;
 
   return (
     <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 animate-slide-up">

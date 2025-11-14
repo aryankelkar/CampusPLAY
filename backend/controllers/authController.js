@@ -28,7 +28,7 @@ export const register = async (req, res) => {
     }
 
     const payload = email === ADMIN_EMAIL
-      ? { name, email, password, role: USER_ROLES.STUDENT }
+      ? { name, email, password, role: USER_ROLES.ADMIN }
       : { name, email, password, role: USER_ROLES.STUDENT, roll, branch, division, classYear };
     const user = await User.create(payload);
     generateToken(res, user._id, user.role);

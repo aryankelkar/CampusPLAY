@@ -6,56 +6,29 @@ import api from '../lib/api';
 import { BRANCHES, DIVISIONS, CLASS_YEARS } from '../constants';
 import { useSocket } from '../context/SocketContext';
 
-type Tab = 'profile' | 'security' | 'preferences' | 'account';
-
-// Helper functions for statistics
-function getMostBookedSport(bookings: any[]) {
-  if (!bookings.length) return 'N/A';
-  const counts: Record<string, number> = {};
-  bookings.forEach(b => counts[b.game] = (counts[b.game] || 0) + 1);
-  return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-}
-
-function getMostBookedGround(bookings: any[]) {
-  if (!bookings.length) return 'N/A';
-  const counts: Record<string, number> = {};
-  bookings.forEach(b => counts[b.ground] = (counts[b.ground] || 0) + 1);
-  return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
-}
-
 function validatePhone(phone: string) {
-  return /^[6-9]\d{9}$/.test(phone);
+  return /^[6-9]\d{9}$/.test(phone.trim());
 }
 
-// Password strength calculator
-function calculatePasswordStrength(password: string): { strength: number; label: string; color: string } {
+function calculatePasswordStrength(password: string): { strength: number; label: string; color: 'red'|'orange'|'yellow'|'green'|'gray' } {
   if (!password) return { strength: 0, label: 'No password', color: 'gray' };
-  
-  let strength = 0;
-  
-  // Length check
-  if (password.length >= 8) strength += 25;
-  if (password.length >= 12) strength += 15;
-  if (password.length >= 16) strength += 10;
-  
-  // Character variety
-  if (/[a-z]/.test(password)) strength += 15;
-  if (/[A-Z]/.test(password)) strength += 15;
-  if (/[0-9]/.test(password)) strength += 15;
-  if (/[^a-zA-Z0-9]/.test(password)) strength += 15; // Special chars
-  
-  // Common patterns (reduce strength)
-  if (/^[a-zA-Z]+$/.test(password)) strength -= 10; // Only letters
-  if (/^[0-9]+$/.test(password)) strength -= 10; // Only numbers
-  if (/(.)\1{2,}/.test(password)) strength -= 10; // Repeated chars
-  
-  strength = Math.max(0, Math.min(100, strength));
-  
-  if (strength < 40) return { strength, label: 'Weak', color: 'red' };
-  if (strength < 60) return { strength, label: 'Fair', color: 'orange' };
-  if (strength < 80) return { strength, label: 'Good', color: 'yellow' };
-  return { strength, label: 'Strong', color: 'green' };
+  let s = 0;
+  if (password.length >= 8) s += 25; if (password.length >= 12) s += 15; if (password.length >= 16) s += 10;
+  if (/[a-z]/.test(password)) s += 15;
+  if (/[A-Z]/.test(password)) s += 15;
+  if (/[0-9]/.test(password)) s += 15;
+  if (/[^a-zA-Z0-9]/.test(password)) s += 15;
+  if (/^[a-zA-Z]+$/.test(password)) s -= 10;
+  if (/^[0-9]+$/.test(password)) s -= 10;
+  if (/(.)\1{2,}/.test(password)) s -= 10;
+  s = Math.max(0, Math.min(100, s));
+  if (s < 40) return { strength: s, label: 'Weak', color: 'red' };
+  if (s < 60) return { strength: s, label: 'Fair', color: 'orange' };
+  if (s < 80) return { strength: s, label: 'Good', color: 'yellow' };
+  return { strength: s, label: 'Strong', color: 'green' };
 }
+
+type Tab = 'profile' | 'security' | 'preferences' | 'account';
 
 export default function SettingsPage() {
   return (
@@ -84,25 +57,22 @@ function Settings() {
 
   // profile form state
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [bio, setBio] = useState('');
   const [branch, setBranch] = useState('');
   const [division, setDivision] = useState('');
   const [classYear, setClassYear] = useState('');
-  
-  // booking statistics
+  const [phone, setPhone] = useState('');
+  const [bio, setBio] = useState('');
   const [bookingStats, setBookingStats] = useState<any>(null);
+  const [recent, setRecent] = useState<any[]>([]);
 
   // security form
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
-  // UI state
+
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [pendingTab, setPendingTab] = useState<Tab | null>(null);
-  
-  // Password strength
+
   const passwordStrength = useMemo(() => calculatePasswordStrength(newPassword), [newPassword]);
 
   useEffect(() => {
@@ -112,31 +82,11 @@ function Settings() {
         const u = data?.data?.user;
         setMe(u);
         setName(u?.name || '');
-        setPhone(u?.phone || '');
-        setBio(u?.bio || '');
         setBranch(u?.branch || '');
         setDivision(u?.division || '');
         setClassYear(u?.classYear || '');
-        
-        // Load booking statistics
-        try {
-          const { data: bookingsData } = await api.get('/bookings');
-          const bookings = bookingsData?.data?.bookings || [];
-          const stats = {
-            total: bookings.length,
-            approved: bookings.filter((b: any) => b.status === 'Approved').length,
-            pending: bookings.filter((b: any) => b.status === 'Pending').length,
-            rejected: bookings.filter((b: any) => b.status === 'Rejected').length,
-            cancelled: bookings.filter((b: any) => b.status === 'Cancelled').length,
-            sports: [...new Set(bookings.map((b: any) => b.game))].length,
-            grounds: [...new Set(bookings.map((b: any) => b.ground))].length,
-            mostBookedSport: getMostBookedSport(bookings),
-            mostBookedGround: getMostBookedGround(bookings),
-            recentBookings: bookings.slice(0, 5)
-          };
-          setBookingStats(stats);
-        } catch {}
-        
+        setPhone(u?.phone || '');
+        setBio(u?.bio || '');
         // Fallback: if academic fields missing, try to infer from latest booking snapshot
         if ((!u?.branch || !u?.division || !u?.classYear) && u?.role === 'student') {
           try {
@@ -150,6 +100,42 @@ function Settings() {
             }
           } catch {}
         }
+        try {
+          const { data: bookingsResp } = await api.get('/bookings');
+          const list = bookingsResp?.data?.bookings || [];
+          const sorted = [...list].sort((a: any, b: any) => (a.date === b.date ? (b.time || '').localeCompare(a.time || '') : (b.date || '').localeCompare(a.date || '')));
+          setRecent(sorted.slice(0, 5));
+          const totals = { total: list.length, approved: 0, pending: 0, rejected: 0, cancelled: 0 } as Record<string, number>;
+          const sport: Record<string, number> = {};
+          const ground: Record<string, number> = {};
+          for (const b of list) {
+            const s = String(b.status || '').toLowerCase();
+            if (s in totals) totals[s]++;
+            if (b.game) sport[b.game] = (sport[b.game] || 0) + 1;
+            if (b.ground) ground[b.ground] = (ground[b.ground] || 0) + 1;
+          }
+          const most = (obj: Record<string, number>) => Object.keys(obj).reduce((a, c) => (obj[a] || 0) >= obj[c] ? a : c, Object.keys(obj)[0] || 'N/A');
+          setBookingStats({
+            total: totals.total,
+            approved: totals.approved,
+            pending: totals.pending,
+            rejected: totals.rejected,
+            cancelled: totals.cancelled,
+            uniqueSports: Object.keys(sport).length,
+            uniqueGrounds: Object.keys(ground).length,
+            mostSport: Object.keys(sport).length ? most(sport) : 'N/A',
+            mostGround: Object.keys(ground).length ? most(ground) : 'N/A',
+          });
+        } catch {}
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status === 401) {
+          // Session expired or not authenticated
+          window.location.href = '/login';
+          return;
+        }
+        // For other errors, keep page but show minimal fallback state
+        setMe(null);
       } finally {
         setLoading(false);
       }
@@ -162,8 +148,6 @@ function Settings() {
         if (data?.user) {
           setMe(data.user);
           setName(data.user.name || '');
-          setPhone(data.user.phone || '');
-          setBio(data.user.bio || '');
           setBranch(data.user.branch || '');
           setDivision(data.user.division || '');
           setClassYear(data.user.classYear || '');
@@ -180,25 +164,29 @@ function Settings() {
 
   const changed = useMemo(() => {
     if (!me) return false;
-    return name !== me.name || phone !== (me.phone || '') || bio !== (me.bio || '') || branch !== me.branch || division !== me.division || classYear !== me.classYear;
-  }, [me, name, phone, bio, branch, division, classYear]);
+    return (
+      name !== me.name ||
+      branch !== me.branch ||
+      division !== me.division ||
+      classYear !== me.classYear ||
+      phone !== (me.phone || '') ||
+      bio !== (me.bio || '')
+    );
+  }, [me, name, branch, division, classYear, phone, bio]);
 
-  // Handle tab change with unsaved warning
-  const handleTabChange = (newTab: Tab) => {
-    if (changed && tab === 'profile') {
-      setPendingTab(newTab);
+  const handleTabChange = (next: Tab) => {
+    if (tab === 'profile' && changed) {
+      setPendingTab(next);
       setShowUnsavedWarning(true);
-    } else {
-      setTab(newTab);
+      return;
     }
+    setTab(next);
   };
 
   const confirmTabChange = () => {
     setShowUnsavedWarning(false);
-    if (pendingTab) {
-      setTab(pendingTab);
-      setPendingTab(null);
-    }
+    if (pendingTab) setTab(pendingTab);
+    setPendingTab(null);
   };
 
   const cancelTabChange = () => {
@@ -207,7 +195,6 @@ function Settings() {
   };
 
   const saveProfile = async () => {
-    // Validate phone if provided
     if (phone && !validatePhone(phone)) {
       setToast({message: '⚠️ Invalid phone number. Must be 10 digits starting with 6-9', type: 'error'});
       setTimeout(()=> setToast(null), 3000);
@@ -218,7 +205,6 @@ function Settings() {
       await api.put('/user/update', { name, phone, bio, branch, division, classYear });
       setToast({message: '✅ Profile updated successfully!', type: 'success'});
       setTimeout(()=> setToast(null), 2000);
-      // refresh me
       const { data } = await api.get('/user/profile');
       const u = data?.data?.user; setMe(u);
     } finally {
@@ -266,7 +252,7 @@ function Settings() {
         </div>
       )}
       
-      {/* Unsaved Changes Warning Modal */}
+      {/* Tab Navigation */}
       {showUnsavedWarning && (
         <>
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-fade-in" onClick={cancelTabChange} />
@@ -282,9 +268,7 @@ function Settings() {
           </div>
         </>
       )}
-
-      {/* Tab Navigation */}
-      <div className="card p-2 sticky top-20 z-10 bg-white/95 backdrop-blur">
+      <div className="card p-2 sticky top-20 z-10 bg-white/90 backdrop-blur">
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           <button 
             className={`flex-1 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-150 whitespace-nowrap ${
@@ -337,24 +321,17 @@ function Settings() {
           {/* Profile Tab */}
           {tab === 'profile' && (
             <div className="space-y-6 animate-fade-in">
-              {/* Account Info Cards */}
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="card p-4 group relative">
                   <div className="text-sm text-muted mb-1">📧 Email</div>
                   <div className="font-semibold text-primary-900 truncate pr-8">{me?.email || 'N/A'}</div>
                   {me?.email && (
                     <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(me.email);
-                        setToast({message: '📧 Email copied!', type: 'success'});
-                        setTimeout(() => setToast(null), 2000);
-                      }}
+                      onClick={() => { navigator.clipboard.writeText(me.email); setToast({message: '📧 Email copied!', type: 'success'}); setTimeout(() => setToast(null), 2000); }}
                       className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-primary-50"
                       title="Copy email"
                     >
-                      <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
+                      <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                     </button>
                   )}
                 </div>
@@ -363,79 +340,42 @@ function Settings() {
                   <div className="font-semibold text-primary-900 pr-8">{me?.roll || 'N/A'}</div>
                   {me?.roll && (
                     <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(me.roll);
-                        setToast({message: '🎓 Roll number copied!', type: 'success'});
-                        setTimeout(() => setToast(null), 2000);
-                      }}
+                      onClick={() => { navigator.clipboard.writeText(me.roll); setToast({message: '🎓 Roll number copied!', type: 'success'}); setTimeout(() => setToast(null), 2000); }}
                       className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-primary-50"
                       title="Copy roll number"
                     >
-                      <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
+                      <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                     </button>
                   )}
                 </div>
                 <div className="card p-4">
                   <div className="text-sm text-muted mb-1">📅 Member Since</div>
-                  <div className="font-semibold text-primary-900">
-                    {me?.createdAt ? new Date(me.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}
-                  </div>
+                  <div className="font-semibold text-primary-900">{me?.createdAt ? new Date(me.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}</div>
                 </div>
               </div>
 
-              {/* Editable Information */}
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-primary mb-4">Personal Information</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="md:col-span-2">
-                    <label className="label mb-2 block">Full Name *</label>
-                    <input 
-                      className="input" 
-                      value={name} 
-                      onChange={(e)=>setName(e.target.value)}
-                      placeholder="Enter your full name"
-                      autoFocus
-                      autoComplete="name"
-                    />
+                    <label className="label mb-2 block">Full Name</label>
+                    <input className="input" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Enter your full name" />
                   </div>
                   <div>
                     <label className="label mb-2 block">Phone Number</label>
-                    <input 
-                      className="input" 
-                      type="tel"
-                      value={phone} 
-                      onChange={(e)=>setPhone(e.target.value)}
-                      placeholder="10 digit mobile number"
-                      maxLength={10}
-                    />
-                    <p className="text-xs text-muted mt-1">Indian mobile number (10 digits)</p>
-                  </div>
-                  <div>
-                    <label className="label mb-2 block">Role</label>
-                    <input 
-                      className="input bg-gray-50 capitalize" 
-                      value={me?.role || 'Student'} 
-                      readOnly 
-                    />
+                    <input className="input" type="tel" value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder="10 digit mobile number" />
+                    {phone && !validatePhone(phone) && (
+                      <p className="text-xs text-red-600 mt-1">Invalid phone. Must be 10 digits starting with 6-9.</p>
+                    )}
                   </div>
                   <div className="md:col-span-2">
                     <label className="label mb-2 block">Bio / About Me</label>
-                    <textarea 
-                      className="input resize-none" 
-                      rows={3}
-                      value={bio} 
-                      onChange={(e)=>setBio(e.target.value.slice(0, 200))}
-                      placeholder="Tell us a little about yourself (optional, max 200 characters)"
-                      maxLength={200}
-                    />
-                    <p className="text-xs text-muted mt-1 text-right">{bio.length}/200</p>
+                    <textarea className="input min-h-[90px]" maxLength={200} value={bio} onChange={(e)=>setBio(e.target.value)} placeholder="Tell us about yourself (max 200 characters)" />
+                    <div className="text-xs text-muted mt-1">{bio.length}/200</div>
                   </div>
                 </div>
               </div>
 
-              {/* Academic Information */}
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-primary mb-4">Academic Details</h3>
                 <div className="grid gap-4 md:grid-cols-3">
@@ -461,27 +401,12 @@ function Settings() {
                     </select>
                   </div>
                 </div>
-              </div>
-
-              {/* Save Actions */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button className="btn btn-primary flex-1" disabled={!changed || saving} onClick={saveProfile}>
-                  {saving ? 'Saving...' : '💾 Save Changes'}
-                </button>
-                <button 
-                  className="btn btn-outline" 
-                  disabled={!changed || saving} 
-                  onClick={()=>{ 
-                    setName(me?.name||''); 
-                    setPhone(me?.phone||''); 
-                    setBio(me?.bio||''); 
-                    setBranch(me?.branch||''); 
-                    setDivision(me?.division||''); 
-                    setClassYear(me?.classYear||''); 
-                  }}
-                >
-                  ↺ Cancel
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t border-gray-200">
+                  <button className="btn btn-primary" disabled={!changed || saving || (!!phone && !validatePhone(phone))} onClick={saveProfile}>
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button className="btn btn-outline" disabled={!changed || saving} onClick={()=>{ setName(me?.name||''); setBranch(me?.branch||''); setDivision(me?.division||''); setClassYear(me?.classYear||''); setPhone(me?.phone||''); setBio(me?.bio||''); }}>Cancel</button>
+                </div>
               </div>
             </div>
           )}
@@ -498,16 +423,7 @@ function Settings() {
                   </div>
                   <div>
                     <label className="label mb-2 block">New Password</label>
-                    <input 
-                      className="input" 
-                      type="password" 
-                      value={newPassword} 
-                      onChange={(e)=>setNewPassword(e.target.value)} 
-                      placeholder="Enter new password"
-                      autoComplete="new-password"
-                    />
-                    
-                    {/* Password Strength Meter */}
+                    <input className="input" type="password" value={newPassword} onChange={(e)=>setNewPassword(e.target.value)} placeholder="Enter new password" autoComplete="new-password" />
                     {newPassword && (
                       <div className="mt-3">
                         <div className="flex items-center justify-between mb-1">
@@ -517,24 +433,18 @@ function Settings() {
                             passwordStrength.color === 'orange' ? 'text-orange-600' :
                             passwordStrength.color === 'yellow' ? 'text-yellow-600' :
                             'text-green-600'
-                          }`}>
-                            {passwordStrength.label}
-                          </span>
+                          }`}>{passwordStrength.label}</span>
                         </div>
                         <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full transition-all duration-300 ${
-                              passwordStrength.color === 'red' ? 'bg-red-500' :
-                              passwordStrength.color === 'orange' ? 'bg-orange-500' :
-                              passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
-                              'bg-green-500'
-                            }`}
-                            style={{ width: `${passwordStrength.strength}%` }}
-                          />
+                          <div className={`h-full transition-all duration-300 ${
+                            passwordStrength.color === 'red' ? 'bg-red-500' :
+                            passwordStrength.color === 'orange' ? 'bg-orange-500' :
+                            passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
+                            'bg-green-500'
+                          }`} style={{ width: `${passwordStrength.strength}%` }} />
                         </div>
                       </div>
                     )}
-
                     <div className="text-xs mt-2 space-y-1">
                       <div className={newPassword.length >= 8 ? 'text-green-600' : 'text-muted'}>
                         {newPassword.length >= 8 ? '✓' : '○'} At least 8 characters
@@ -598,118 +508,55 @@ function Settings() {
               </div>
             </div>
           )}
-
-          {/* Account Info Tab */}
           {tab === 'account' && (
             <div className="space-y-6 animate-fade-in">
-              {/* Account Summary */}
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-primary mb-4">Account Summary</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg">
-                    <div className="text-4xl">👤</div>
-                    <div>
-                      <div className="text-sm text-muted">Account Type</div>
-                      <div className="font-semibold text-primary-900 capitalize">{me?.role || 'Student'}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                    <div className="text-4xl">✉️</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-muted">Email Address</div>
-                      <div className="font-semibold text-primary-900 truncate">{me?.email || 'N/A'}</div>
-                    </div>
-                  </div>
+              <div className="grid gap-4 md:grid-cols-4">
+                <div className="card p-4 text-center">
+                  <div className="text-xs text-muted mb-1">Total</div>
+                  <div className="text-2xl font-bold">{bookingStats?.total ?? 0}</div>
+                </div>
+                <div className="card p-4 text-center">
+                  <div className="text-xs text-muted mb-1">Approved</div>
+                  <div className="text-2xl font-bold text-green-600">{bookingStats?.approved ?? 0}</div>
+                </div>
+                <div className="card p-4 text-center">
+                  <div className="text-xs text-muted mb-1">Pending</div>
+                  <div className="text-2xl font-bold text-amber-600">{bookingStats?.pending ?? 0}</div>
+                </div>
+                <div className="card p-4 text-center">
+                  <div className="text-xs text-muted mb-1">Rejected</div>
+                  <div className="text-2xl font-bold text-red-600">{bookingStats?.rejected ?? 0}</div>
                 </div>
               </div>
 
-              {/* Booking Statistics */}
-              {bookingStats && (
-                <div className="card p-6">
-                  <h3 className="text-lg font-semibold text-primary mb-4">📊 Booking Statistics</h3>
-                  <div className="grid gap-4 md:grid-cols-4">
-                    <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-                      <div className="text-3xl font-bold text-green-600">{bookingStats.total}</div>
-                      <div className="text-sm text-muted mt-1">Total Bookings</div>
-                    </div>
-                    <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                      <div className="text-3xl font-bold text-blue-600">{bookingStats.approved}</div>
-                      <div className="text-sm text-muted mt-1">Approved</div>
-                    </div>
-                    <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg">
-                      <div className="text-3xl font-bold text-yellow-600">{bookingStats.pending}</div>
-                      <div className="text-sm text-muted mt-1">Pending</div>
-                    </div>
-                    <div className="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
-                      <div className="text-3xl font-bold text-red-600">{bookingStats.rejected}</div>
-                      <div className="text-sm text-muted mt-1">Rejected</div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2 mt-4">
-                    <div className="p-4 border border-gray-200 rounded-lg">
-                      <div className="text-sm text-muted mb-2">🏆 Most Booked Sport</div>
-                      <div className="font-semibold text-primary-900">{bookingStats.mostBookedSport}</div>
-                    </div>
-                    <div className="p-4 border border-gray-200 rounded-lg">
-                      <div className="text-sm text-muted mb-2">🏟️ Most Booked Ground</div>
-                      <div className="font-semibold text-primary-900">{bookingStats.mostBookedGround}</div>
-                    </div>
-                    <div className="p-4 border border-gray-200 rounded-lg">
-                      <div className="text-sm text-muted mb-2">🎯 Unique Sports</div>
-                      <div className="font-semibold text-primary-900">{bookingStats.sports} {bookingStats.sports === 1 ? 'Sport' : 'Sports'}</div>
-                    </div>
-                    <div className="p-4 border border-gray-200 rounded-lg">
-                      <div className="text-sm text-muted mb-2">📍 Unique Grounds</div>
-                      <div className="font-semibold text-primary-900">{bookingStats.grounds} {bookingStats.grounds === 1 ? 'Ground' : 'Grounds'}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Recent Activity */}
-              {bookingStats && bookingStats.recentBookings && bookingStats.recentBookings.length > 0 && (
-                <div className="card p-6">
-                  <h3 className="text-lg font-semibold text-primary mb-4">🕐 Recent Bookings</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="card p-5">
+                  <h3 className="text-lg font-semibold text-primary mb-3">Recent Activity</h3>
                   <div className="space-y-3">
-                    {bookingStats.recentBookings.map((booking: any, idx: number) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className="flex-1">
-                          <div className="font-medium text-primary-900">{booking.game} @ {booking.ground}</div>
-                          <div className="text-sm text-muted">{booking.date} • {booking.time}</div>
+                    {recent.length === 0 ? (
+                      <div className="text-sm text-muted">No recent bookings</div>
+                    ) : (
+                      recent.map((b: any) => (
+                        <div key={b._id} className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+                          <div className="text-sm font-medium">{b.game} @ {b.ground}</div>
+                          <div className="text-xs text-muted">{b.date} · {b.time}</div>
                         </div>
-                        <span className={`badge ${
-                          booking.status === 'Approved' ? 'badge-green' : 
-                          booking.status === 'Pending' ? 'badge-yellow' : 
-                          booking.status === 'Rejected' ? 'badge-red' : 'badge-gray'
-                        }`}>
-                          {booking.status}
-                        </span>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
-              )}
-
-              {/* Quick Actions */}
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-primary mb-4">⚡ Quick Actions</h3>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Link href="/bookings" className="btn btn-primary flex items-center justify-center gap-2">
-                    <span>📅</span> <span>New Booking</span>
-                  </Link>
-                  <Link href="/history" className="btn btn-outline flex items-center justify-center gap-2">
-                    <span>📚</span> <span>View All History</span>
-                  </Link>
-                  <Link href="/availability" className="btn btn-outline flex items-center justify-center gap-2">
-                    <span>🕐</span> <span>Check Availability</span>
-                  </Link>
-                  <button 
-                    className="btn btn-outline flex items-center justify-center gap-2"
-                    onClick={() => setTab('profile')}
-                  >
-                    <span>✏️</span> <span>Edit Profile</span>
-                  </button>
+                <div className="card p-5">
+                  <h3 className="text-lg font-semibold text-primary mb-3">Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span>Unique Sports</span><span className="font-semibold">{bookingStats?.uniqueSports ?? 0}</span></div>
+                    <div className="flex justify-between"><span>Unique Grounds</span><span className="font-semibold">{bookingStats?.uniqueGrounds ?? 0}</span></div>
+                    <div className="flex justify-between"><span>Most Played Sport</span><span className="font-semibold">{bookingStats?.mostSport ?? 'N/A'}</span></div>
+                    <div className="flex justify-between"><span>Most Used Ground</span><span className="font-semibold">{bookingStats?.mostGround ?? 'N/A'}</span></div>
+                  </div>
+                  <div className="flex gap-3 mt-4">
+                    <Link href="/bookings" className="btn btn-primary flex-1">Book New</Link>
+                    <Link href="/history" className="btn btn-secondary flex-1">View History</Link>
+                  </div>
                 </div>
               </div>
             </div>

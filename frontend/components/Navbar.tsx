@@ -3,23 +3,17 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { Home as HomeIcon, CalendarCheck, Clock, Settings as SettingsIcon, LogIn, UserPlus, LogOut, ShieldCheck, History, Info } from 'lucide-react';
-import api from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string; role: string; email?: string } | null>(null);
+  const { user, loading, logout: authLogout } = useAuth();
   const [logoError, setLogoError] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdown, setDropdown] = useState(false);
 
   useEffect(() => {
-    const fetchMe = async () => {
-      try {
-        const { data } = await api.get('/auth/me');
-        setUser(data?.data?.user || null);
-      } catch {}
-    };
-    fetchMe();
+    setDropdown(false);
   }, [router.pathname]);
 
   
@@ -28,8 +22,7 @@ export default function Navbar() {
 
   const logout = async () => {
     try {
-      await api.post('/auth/logout');
-      setUser(null);
+      await authLogout();
       router.push('/login');
     } catch {}
   };
@@ -126,7 +119,8 @@ export default function Navbar() {
 
         {/* Right: Settings + Avatar (desktop) */}
         <div className="hidden md:flex items-center gap-3 relative">
-          {!user ? (
+          {!loading && (
+          !user ? (
             <div className="flex items-center gap-2">
               <Link 
                 title="About" 
@@ -175,7 +169,7 @@ export default function Navbar() {
                 title="Settings"
                 href="/settings"
                 className={`nav-link flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary-50 ${
-                  router.pathname === '/settings' ? 'bg-primary-50' : ''
+                  router.pathname === '/settings' ? 'nav-link-active' : ''
                 }`}
               >
                 <SettingsIcon size={20} strokeWidth={2} />
@@ -202,10 +196,12 @@ export default function Navbar() {
                     <div className="px-3 py-2 mb-1 border-b border-gray-200">
                       <p className="text-sm font-semibold text-primary-950 truncate">{user?.name || 'User'}</p>
                       <p className="text-xs text-muted truncate">{user?.email || ''}</p>
-                      <p className="text-xs text-primary-600 mt-1 capitalize">{user?.role || 'Student'}</p>
                     </div>
                     <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors" onClick={()=> setDropdown(false)}>
-                      <SettingsIcon size={18} strokeWidth={2} /> <span className="font-medium text-sm">Settings</span>
+                      <SettingsIcon size={18} strokeWidth={2} /> <span className="font-medium text-sm">Edit Profile</span>
+                    </Link>
+                    <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors" onClick={()=> setDropdown(false)}>
+                      <ShieldCheck size={18} strokeWidth={2} /> <span className="font-medium text-sm">Change Password</span>
                     </Link>
                     <div className="my-1 border-t border-gray-200"></div>
                     <button className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-left text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors" onClick={()=> { setDropdown(false); logout(); }}>
@@ -215,12 +211,13 @@ export default function Navbar() {
                 </>
               )}
             </div>
+          )
           )}
         </div>
 
         {/* Mobile: hamburger + avatar */}
         <div className="flex items-center gap-3 md:hidden">
-          {user && (
+          {!loading && user && (
             <div 
               className="flex h-9 w-9 items-center justify-center rounded-full text-white font-bold text-xs" 
               style={{
@@ -297,7 +294,7 @@ export default function Navbar() {
                   <ShieldCheck size={20} strokeWidth={2.5} /> <span>Admin</span>
                 </Link>
               )}
-              {!user ? (
+              {!loading && (!user ? (
                 <>
                   <div className="my-2 border-t border-gray-200"></div>
                   <Link className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:text-primary-700 hover:bg-primary-50 font-medium transition-colors" href="/login" onClick={()=>setMobileOpen(false)}>
@@ -317,7 +314,7 @@ export default function Navbar() {
                     <LogOut size={20} strokeWidth={2.5} /> <span>Logout</span>
                   </button>
                 </>
-              )}
+              ))}
             </div>
           </div>
         </>

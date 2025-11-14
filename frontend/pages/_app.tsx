@@ -1,13 +1,14 @@
 import type { AppProps } from 'next/app';
 import '../styles/globals.css';
-import Navbar from '../components/Navbar';
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { AuthProvider } from '../context/AuthContext';
 import { SocketProvider } from '../context/SocketContext';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import OfflineIndicator from '../components/common/OfflineIndicator';
-import ConnectionStatus from '../components/common/ConnectionStatus';
+const Navbar = dynamic(() => import('../components/Navbar'), { ssr: false });
+const ConnectionStatus = dynamic(() => import('../components/common/ConnectionStatus'), { ssr: false });
 import Head from 'next/head';
 import { Inter, Poppins } from 'next/font/google';
 

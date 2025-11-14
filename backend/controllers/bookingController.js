@@ -59,7 +59,12 @@ export const createBooking = async (req, res) => {
   try {
     // Conflict check: prevent duplicate time slot for same date + ground
     const { ground, date, time } = req.body;
-    const existing = await Booking.findOne({ ground, date, time });
+    const existing = await Booking.findOne({
+      ground,
+      date,
+      time,
+      status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED] }
+    });
     if (existing) {
       return sendError(res, ERROR_MESSAGES.SLOT_BOOKED, 409);
     }
@@ -224,7 +229,7 @@ export const availability = async (req, res) => {
     const { date, ground } = req.query;
     if (!date || !ground) return sendError(res, 'date and ground are required', 400);
     // Only show Approved bookings as 'Booked'. Pending bookings don't block slots.
-    const bookings = await Booking.find({ date, ground, status: BOOKING_STATUS.APPROVED });
+    const bookings = await Booking.find({ date, ground, status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED] } });
     const bookedTimes = bookings.map((b) => b.time);
 
     const allSlots = TIME_SLOTS;

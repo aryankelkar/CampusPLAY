@@ -1,22 +1,23 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { sendError } from '../utils/responseHandler.js';
 
 export const protect = async (req, res, next) => {
   try {
     const token = req.cookies?.token;
-    if (!token) return res.status(401).json({ message: 'Not authorized, no token' });
+    if (!token) return sendError(res, 'Not authorized, no token', 401);
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = await User.findById(decoded.userId).select('-password');
-    if (!req.user) return res.status(401).json({ message: 'User not found' });
+    if (!req.user) return sendError(res, 'User not found', 401);
 
     next();
   } catch (err) {
-    return res.status(401).json({ message: 'Not authorized, token failed' });
+    return sendError(res, 'Not authorized, token failed', 401);
   }
 };
 
 export const adminOnly = (req, res, next) => {
   if (req.user && req.user.role === 'admin') return next();
-  return res.status(403).json({ message: 'Admin access only' });
+  return sendError(res, 'Admin access only', 403);
 };

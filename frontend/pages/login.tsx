@@ -1,15 +1,27 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import api from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const router = useRouter();
+  const { user, loading: authLoading, refresh } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/');
+    }
+  }, [authLoading, user, router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +37,8 @@ export default function Login() {
     try {
       setLoading(true);
       await api.post('/auth/login', { email, password });
-      router.push('/');
+      await refresh();
+      router.replace('/');
     } catch (err: any) {
       const data = err?.response?.data;
       const firstValidationMsg = Array.isArray(data?.errors) && data.errors.length > 0 ? data.errors[0].msg : '';

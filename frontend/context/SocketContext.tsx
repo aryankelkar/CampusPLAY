@@ -21,24 +21,19 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    
+
     const newSocket = io(API_URL, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+      timeout: 20000,
     });
 
     newSocket.on('connect', () => {
       console.log('✅ Socket connected:', newSocket.id);
       setConnected(true);
-
-      // Join appropriate room based on user role
-      if (user) {
-        if (user.role === 'admin') {
-          newSocket.emit('join-admin');
-        } else {
-          newSocket.emit('join-student', user._id);
-        }
-      }
     });
 
     newSocket.on('disconnect', () => {
@@ -48,6 +43,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     newSocket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
+      setConnected(false);
     });
 
     setSocket(newSocket);
@@ -55,7 +51,18 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => {
       newSocket.close();
     };
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    if (user) {
+      if (user.role === 'admin') {
+        socket.emit('join-admin');
+      } else {
+        socket.emit('join-student', user._id);
+      }
+    }
+  }, [socket, user]);
 
   return (
     <SocketContext.Provider value={{ socket, connected }}>

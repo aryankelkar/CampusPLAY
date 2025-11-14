@@ -35,13 +35,28 @@ function ApprovedView() {
       const { data } = await api.get('/bookings');
       const all = data?.data?.bookings || [];
       setRows(all.filter((b: any) => b.status === 'Approved'));
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+      setRows([]);
     } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
 
   const act = async (id: string, action: 'pending') => {
-    await api.patch(`/bookings/${id}/pending`);
-    await load();
+    try {
+      await api.patch(`/bookings/${id}/pending`);
+      await load();
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401) {
+        window.location.href = '/login';
+        return;
+      }
+    }
   };
 
   return (
