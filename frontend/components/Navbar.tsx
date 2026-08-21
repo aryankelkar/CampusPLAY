@@ -2,7 +2,22 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
-import { Home as HomeIcon, CalendarCheck, Clock, Settings as SettingsIcon, LogIn, UserPlus, LogOut, ShieldCheck, History, Info } from 'lucide-react';
+import { 
+  Home as HomeIcon, 
+  CalendarCheck, 
+  Clock, 
+  Settings as SettingsIcon, 
+  LogIn, 
+  UserPlus, 
+  LogOut, 
+  ShieldCheck, 
+  History, 
+  Info,
+  ChevronDown,
+  Menu,
+  X,
+  Dumbbell
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
@@ -11,12 +26,48 @@ export default function Navbar() {
   const [logoError, setLogoError] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdown, setDropdown] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     setDropdown(false);
+    setMobileOpen(false);
   }, [router.pathname]);
 
-  
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setDropdown(false);
+      setMobileOpen(false);
+    };
+    router.events.on('routeChangeStart', handleRouteChange);
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
+  }, [router.events]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 15);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Keyboard shortcut: Escape to close dropdown or mobile menu
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setDropdown(false);
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleNavClick = () => {
+    setMobileOpen(false);
+    setDropdown(false);
+  };
 
   const avatar = useMemo(() => (user?.name ? user.name.charAt(0).toUpperCase() : 'U'), [user?.name]);
 
@@ -27,291 +78,432 @@ export default function Navbar() {
     } catch {}
   };
 
+  // Active state helper
+  const isActive = (path: string) => {
+    if (path === '/') return router.pathname === '/';
+    return router.pathname.startsWith(path);
+  };
+
   return (
-    <nav className="sticky top-4 z-[60] mx-auto max-w-6xl px-4">
-      <div className="navbar-glass flex h-16 items-center justify-between px-6">
-        {/* Left: Brand */}
-        <Link href="/" className="flex items-center gap-3 group" title="Home">
-          {logoError ? (
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 grid place-items-center shadow-sm group-hover:shadow-md transition-shadow">
-              <span className="text-white font-bold text-sm">CP</span>
-            </div>
-          ) : (
-            <div className="h-10 w-10 rounded-xl overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
-              <Image src="/campusplay-logo.png" alt="CampusPlay logo" width={40} height={40} priority onError={() => setLogoError(true)} />
-            </div>
-          )}
-          <div className="flex flex-col">
-            <span className="text-xl font-bold tracking-tight leading-none text-gradient-sport">CampusPlay</span>
-            <span className="text-[10px] font-medium tracking-widest text-muted" style={{letterSpacing: '0.1em'}}>SPORTS BOOKING</span>
-          </div>
+    <header className="sticky top-[12px] z-[1000] w-full px-3 sm:px-6 font-jakarta transition-all duration-200">
+      <div 
+        className={`mx-auto max-w-[1450px] h-[60px] sm:h-[66px] px-4 sm:px-6 flex items-center justify-between transition-all duration-200 border rounded-[18px] bg-white border-[#DCE6F0] ${
+          scrolled 
+            ? 'shadow-[7px_7px_18px_rgba(148,163,184,0.22),-7px_-7px_18px_rgba(255,255,255,0.95)] border-[#CBD5E1]'
+            : 'shadow-[7px_7px_18px_rgba(148,163,184,0.16),-7px_-7px_18px_rgba(255,255,255,0.90)]'
+        }`}
+      >
+        {/* LEFT: CAMPUSPLAY BRAND TEXT */}
+        <Link 
+          href="/" 
+          className="flex items-center gap-1.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] rounded-xl p-1" 
+          title="CampusPlay Home"
+          onClick={handleNavClick}
+        >
+          <span className="text-base sm:text-lg font-extrabold tracking-tight text-[#0F172A] uppercase">
+            CampusPlay
+          </span>
+          <span className="w-2 h-2 rounded-full bg-[#2563EB]"></span>
         </Link>
 
-        {/* Center: Links (desktop) */}
-        <div className="hidden md:flex items-center gap-1">
+        {/* CENTER: DESKTOP NAVIGATION ITEMS */}
+        <nav className="hidden md:flex items-center gap-1 sm:gap-1.5" aria-label="Main Navigation">
+          {/* HOME */}
           <Link 
-            title="Home" 
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 uppercase tracking-wider ${
-              router.pathname === '/'
-                ? 'nav-link-active'
-                : 'nav-link'
-            }`} 
             href="/"
+            onClick={handleNavClick}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+              isActive('/') 
+                ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
+                : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+            }`}
           >
-            <HomeIcon size={18} strokeWidth={2.5} />
+            <HomeIcon size={18} strokeWidth={isActive('/') ? 2.3 : 2} className={isActive('/') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
             <span>Home</span>
           </Link>
+
+          {/* BOOK (Non-admin) */}
           {user?.role !== 'admin' && (
-            <>
-              <Link 
-                title="Book Ground" 
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 uppercase tracking-wider ${
-                  router.pathname.startsWith('/bookings')
-                    ? 'nav-link-active'
-                    : 'nav-link'
-                }`} 
-                href="/bookings"
-              >
-                <CalendarCheck size={18} strokeWidth={2.5} />
-                <span>Book</span>
-              </Link>
-              <Link 
-                title="History" 
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 uppercase tracking-wider ${
-                  router.pathname === '/history'
-                    ? 'nav-link-active'
-                    : 'nav-link'
-                }`} 
-                href="/history"
-              >
-                <History size={18} strokeWidth={2.5} />
-                <span>History</span>
-              </Link>
-            </>
+            <Link 
+              href="/bookings"
+              onClick={handleNavClick}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+                isActive('/bookings') 
+                  ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
+                  : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+              }`}
+            >
+              <CalendarCheck size={18} strokeWidth={isActive('/bookings') ? 2.3 : 2} className={isActive('/bookings') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+              <span>Book</span>
+            </Link>
           )}
+
+          {/* EQUIPMENT */}
           <Link 
-            title="Availability" 
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 uppercase tracking-wider ${
-              router.pathname.startsWith('/availability')
-                ? 'nav-link-active'
-                : 'nav-link'
-            }`} 
-            href="/availability"
+            href="/equipment"
+            onClick={handleNavClick}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+              isActive('/equipment') 
+                ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
+                : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+            }`}
           >
-            <Clock size={18} strokeWidth={2.5} />
+            <Dumbbell size={18} strokeWidth={isActive('/equipment') ? 2.3 : 2} className={isActive('/equipment') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+            <span>Equipment</span>
+          </Link>
+
+          {/* HISTORY (Non-admin) */}
+          {user?.role !== 'admin' && (
+            <Link 
+              href="/history"
+              onClick={handleNavClick}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+                isActive('/history') 
+                  ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
+                  : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+              }`}
+            >
+              <History size={18} strokeWidth={isActive('/history') ? 2.3 : 2} className={isActive('/history') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+              <span>History</span>
+            </Link>
+          )}
+
+          {/* AVAILABILITY */}
+          <Link 
+            href="/availability"
+            onClick={handleNavClick}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+              isActive('/availability') 
+                ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
+                : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+            }`}
+          >
+            <Clock size={18} strokeWidth={isActive('/availability') ? 2.3 : 2} className={isActive('/availability') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
             <span>Availability</span>
           </Link>
+
+          {/* ABOUT */}
+          <Link 
+            href="/about"
+            onClick={handleNavClick}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+              isActive('/about') 
+                ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
+                : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+            }`}
+          >
+            <Info size={18} strokeWidth={isActive('/about') ? 2.3 : 2} className={isActive('/about') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+            <span>About</span>
+          </Link>
+
+          {/* ADMIN (Admin only) */}
           {user?.role === 'admin' && (
             <Link 
-              title="Admin" 
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 uppercase tracking-wider ${
-                router.pathname.startsWith('/admin')
-                  ? 'nav-link-active'
-                  : 'nav-link'
-              }`} 
               href="/admin/dashboard"
+              onClick={handleNavClick}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+                isActive('/admin') 
+                  ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
+                  : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+              }`}
             >
-              <ShieldCheck size={18} strokeWidth={2.5} />
+              <ShieldCheck size={18} strokeWidth={isActive('/admin') ? 2.3 : 2} className={isActive('/admin') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
               <span>Admin</span>
             </Link>
           )}
-        </div>
+        </nav>
 
-        {/* Right: Settings + Avatar (desktop) */}
+        {/* RIGHT: SETTINGS + PROFILE / USER CONTROL */}
         <div className="hidden md:flex items-center gap-3 relative">
           {!loading && (
-          !user ? (
-            <div className="flex items-center gap-2">
-              <Link 
-                title="About" 
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 uppercase tracking-wider ${
-                  router.pathname === '/about'
-                    ? 'nav-link-active'
-                    : 'nav-link'
-                }`} 
-                href="/about"
-              >
-                <Info size={18} strokeWidth={2.5} />
-                <span>About</span>
-              </Link>
-              <Link 
-                title="Login" 
-                className="nav-link flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 uppercase tracking-wider" 
-                href="/login"
-              >
-                <LogIn size={18} strokeWidth={2.5} />
-                <span>Login</span>
-              </Link>
-              <Link 
-                title="Register" 
-                className="btn btn-primary flex items-center gap-2 text-sm uppercase tracking-wider" 
-                href="/register"
-              >
-                <UserPlus size={18} strokeWidth={2.5} />
-                <span>Register</span>
-              </Link>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Link 
-                title="About" 
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 uppercase tracking-wider ${
-                  router.pathname === '/about'
-                    ? 'nav-link-active'
-                    : 'nav-link'
-                }`} 
-                href="/about"
-              >
-                <Info size={18} strokeWidth={2.5} />
-                <span>About</span>
-              </Link>
-              <Link
-                title="Settings"
-                href="/settings"
-                className={`nav-link flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-primary-50 ${
-                  router.pathname === '/settings' ? 'nav-link-active' : ''
-                }`}
-              >
-                <SettingsIcon size={20} strokeWidth={2} />
-              </Link>
-              <button
-                onClick={()=> setDropdown((v)=>!v)}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full text-white font-bold text-sm transition-all duration-200 hover:scale-105 hover:shadow-lg" 
-                title={`Logged in as ${user?.name || 'User'}`}
-                style={{
-                  background: 'linear-gradient(135deg, #22C55E, #2563EB)',
-                  boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)'
-                }}
-              >
-                {avatar}
-              </button>
+            !user ? (
+              <div className="flex items-center gap-2">
+                <Link 
+                  href="/login"
+                  onClick={handleNavClick}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-[12px] text-sm font-semibold text-[#52657A] hover:text-[#2563EB] hover:bg-[#EFF6FF] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                >
+                  <LogIn size={18} strokeWidth={2} />
+                  <span>Login</span>
+                </Link>
+                <Link 
+                  href="/register"
+                  onClick={handleNavClick}
+                  className="btn btn-primary px-4 py-2 text-sm font-bold flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                >
+                  <UserPlus size={18} strokeWidth={2} />
+                  <span>Register</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="relative flex items-center gap-2.5">
+                {/* COMPACT SETTINGS ICON BUTTON */}
+                <Link
+                  href="/settings"
+                  onClick={handleNavClick}
+                  className="p-2 rounded-[12px] text-[#52657A] hover:text-[#2563EB] hover:bg-[#EFF6FF] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                  title="Settings"
+                  aria-label="Settings"
+                >
+                  <SettingsIcon size={18} />
+                </Link>
 
-              {dropdown && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setDropdown(false)}
-                  />
-                  <div className="modal-content absolute right-0 top-14 w-64 p-2 z-50">
-                    <div className="px-3 py-2 mb-1 border-b border-gray-200">
-                      <p className="text-sm font-semibold text-primary-950 truncate">{user?.name || 'User'}</p>
-                      <p className="text-xs text-muted truncate">{user?.email || ''}</p>
-                    </div>
-                    <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors" onClick={()=> setDropdown(false)}>
-                      <SettingsIcon size={18} strokeWidth={2} /> <span className="font-medium text-sm">Edit Profile</span>
-                    </Link>
-                    <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors" onClick={()=> setDropdown(false)}>
-                      <ShieldCheck size={18} strokeWidth={2} /> <span className="font-medium text-sm">Change Password</span>
-                    </Link>
-                    <div className="my-1 border-t border-gray-200"></div>
-                    <button className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-left text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors" onClick={()=> { setDropdown(false); logout(); }}>
-                      <LogOut size={18} strokeWidth={2} /> <span className="font-medium text-sm">Logout</span>
-                    </button>
+                {/* PROFILE BUTTON: [ Avatar ] User Name ▾ */}
+                <button
+                  onClick={() => setDropdown((v) => !v)}
+                  aria-expanded={dropdown}
+                  aria-haspopup="true"
+                  className="flex items-center gap-2.5 px-3 py-1.5 rounded-[12px] bg-[#F8FAFC] border border-[#DCE6F0] shadow-[4px_4px_10px_rgba(148,163,184,0.14),-4px_-4px_10px_rgba(255,255,255,0.85)] hover:bg-[#EFF6FF] hover:text-[#2563EB] transition-all duration-200 text-sm font-semibold text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                  title={`Account options for ${user?.name || 'User'}`}
+                >
+                  <div className="w-7 h-7 rounded-lg bg-[#2563EB] text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                    {avatar}
                   </div>
-                </>
-              )}
-            </div>
-          )
+                  <span className="font-bold max-w-[110px] truncate">{user?.name ? user.name.split(' ')[0] : 'User'}</span>
+                  <ChevronDown size={16} className={`text-[#52657A] transition-transform duration-200 ${dropdown ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* REDESIGNED NEUMORPHIC DROPDOWN PANEL */}
+                {dropdown && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setDropdown(false)}
+                    />
+                    <div className="absolute right-0 top-14 w-64 p-2 z-50 rounded-[16px] bg-white border border-[#DCE6F0] shadow-[7px_7px_18px_rgba(148,163,184,0.18),-7px_-7px_18px_rgba(255,255,255,0.90)] animate-fade-in">
+                      {/* USER INFO HEADER */}
+                      <div className="px-3.5 py-3 mb-1.5 rounded-[12px] bg-[#EDF4FB] border border-[#DCE6F0]">
+                        <p className="text-sm font-bold text-[#0F172A] truncate">{user?.name || 'User'}</p>
+                        <p className="text-xs text-[#52657A] truncate mt-0.5">{user?.email || ''}</p>
+                        <span className="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-[#DBEAFE] text-[#1D4ED8] mt-2 border border-[#BFDBFE]">
+                          {user?.role || 'student'}
+                        </span>
+                      </div>
+
+                      {/* DROPDOWN ITEMS */}
+                      <Link 
+                        href="/settings" 
+                        className="flex items-center gap-3 px-3.5 py-2.5 rounded-[10px] text-sm font-semibold text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] transition-colors" 
+                        onClick={() => { handleNavClick(); }}
+                      >
+                        <SettingsIcon size={18} strokeWidth={2} /> 
+                        <span>Profile & Settings</span>
+                      </Link>
+
+                      {user?.role !== 'admin' ? (
+                        <Link 
+                          href="/history" 
+                          className="flex items-center gap-3 px-3.5 py-2.5 rounded-[10px] text-sm font-semibold text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] transition-colors" 
+                          onClick={() => { handleNavClick(); }}
+                        >
+                          <History size={18} strokeWidth={2} /> 
+                          <span>My Booking History</span>
+                        </Link>
+                      ) : (
+                        <Link 
+                          href="/admin/dashboard" 
+                          className="flex items-center gap-3 px-3.5 py-2.5 rounded-[10px] text-sm font-semibold text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] transition-colors" 
+                          onClick={() => { handleNavClick(); }}
+                        >
+                          <ShieldCheck size={18} strokeWidth={2} /> 
+                          <span>Admin Dashboard</span>
+                        </Link>
+                      )}
+
+                      <div className="my-1.5 border-t border-[#DCE6F0]"></div>
+
+                      {/* LOGOUT BUTTON */}
+                      <button 
+                        className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-[10px] text-left text-[#EF4444] font-semibold text-sm hover:bg-rose-50/80 transition-colors" 
+                        onClick={() => { setDropdown(false); logout(); }}
+                      >
+                        <LogOut size={18} strokeWidth={2} className="text-[#EF4444]" /> 
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
           )}
         </div>
 
-        {/* Mobile: hamburger + avatar */}
-        <div className="flex items-center gap-3 md:hidden">
+        {/* MOBILE: HAMBURGER CONTROL */}
+        <div className="flex items-center gap-2 md:hidden">
           {!loading && user && (
-            <div 
-              className="flex h-9 w-9 items-center justify-center rounded-full text-white font-bold text-xs" 
-              style={{
-                background: 'linear-gradient(135deg, #22C55E, #2563EB)',
-                boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)'
-              }}
-            >
+            <div className="w-8 h-8 rounded-lg bg-[#2563EB] text-white font-bold text-xs flex items-center justify-center shadow-xs">
               {avatar}
             </div>
           )}
           <button 
-            aria-label="Menu" 
-            className="flex flex-col gap-1.5 p-2 hover:bg-primary-50 rounded-lg transition-colors" 
-            onClick={()=>setMobileOpen(v=>!v)}
+            aria-label="Toggle navigation menu" 
+            aria-expanded={mobileOpen}
+            className="p-2 rounded-[12px] bg-white border border-[#DCE6F0] text-[#0F172A] shadow-[4px_4px_10px_rgba(148,163,184,0.14)] active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#2563EB]" 
+            onClick={() => setMobileOpen((v) => !v)}
           >
-            <div className={`h-0.5 w-6 bg-gray-700 rounded-full transition-all duration-200 ${mobileOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
-            <div className={`h-0.5 w-6 bg-gray-700 rounded-full transition-all duration-200 ${mobileOpen ? 'opacity-0' : ''}`}></div>
-            <div className={`h-0.5 w-6 bg-gray-700 rounded-full transition-all duration-200 ${mobileOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+            {mobileOpen ? <X size={20} className="text-[#2563EB]" /> : <Menu size={20} className="text-[#0F172A]" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* MOBILE NEUMORPHIC MENU PANEL */}
       {mobileOpen && (
         <>
           <div 
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden animate-fade-in" 
+            className="fixed inset-0 bg-slate-900/20 backdrop-blur-xs z-40 md:hidden animate-fade-in" 
             onClick={() => setMobileOpen(false)}
           />
-          <div className="modal-content md:hidden absolute left-4 right-4 top-20 z-50 max-h-[calc(100vh-6rem)] overflow-y-auto">
-            <div className="flex flex-col p-3">
+          <div className="md:hidden absolute left-4 right-4 top-20 z-50 p-4 rounded-[16px] bg-white border border-[#DCE6F0] shadow-[7px_7px_18px_rgba(148,163,184,0.18),-7px_-7px_18px_rgba(255,255,255,0.9)] animate-fade-in max-h-[calc(100vh-6rem)] overflow-y-auto">
+            <div className="flex flex-col gap-1.5">
               {user && (
-                <div className="px-4 py-3 rounded-lg mb-3" style={{
-                  background: 'rgba(34, 197, 94, 0.1)',
-                  border: '1px solid rgba(34, 197, 94, 0.2)'
-                }}>
-                  <p className="text-sm font-semibold text-primary-950">{user?.name || 'User'}</p>
-                  <p className="text-xs text-muted">{user?.email || ''}</p>
+                <div className="px-4 py-3 rounded-[12px] bg-[#EDF4FB] border border-[#DCE6F0] mb-2">
+                  <p className="text-sm font-bold text-[#0F172A]">{user?.name || 'User'}</p>
+                  <p className="text-xs text-[#52657A] mt-0.5">{user?.email || ''}</p>
                 </div>
               )}
-              <Link className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-                router.pathname === '/' ? 'text-white bg-gradient-sport' : 'text-gray-700 hover:text-primary-700 hover:bg-primary-50'
-              }`} href="/" onClick={()=>setMobileOpen(false)}>
-                <HomeIcon size={20} strokeWidth={2.5} /> <span>Home</span>
+
+              {/* MOBILE HOME */}
+              <Link 
+                href="/" 
+                onClick={handleNavClick}
+                className={`flex items-center gap-3 px-4 py-3 rounded-[12px] min-h-[44px] text-sm font-semibold transition-all ${
+                  isActive('/') 
+                    ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 font-bold shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16)]' 
+                    : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB]'
+                }`}
+              >
+                <HomeIcon size={20} strokeWidth={2} /> 
+                <span>Home</span>
               </Link>
+
+              {/* MOBILE BOOK */}
               {user?.role !== 'admin' && (
-                <>
-                  <Link className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-                    router.pathname.startsWith('/bookings') ? 'text-white bg-gradient-sport' : 'text-gray-700 hover:text-primary-700 hover:bg-primary-50'
-                  }`} href="/bookings" onClick={()=>setMobileOpen(false)}>
-                    <CalendarCheck size={20} strokeWidth={2.5} /> <span>Book Ground</span>
-                  </Link>
-                  <Link className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-                    router.pathname === '/history' ? 'text-white bg-gradient-sport' : 'text-gray-700 hover:text-primary-700 hover:bg-primary-50'
-                  }`} href="/history" onClick={()=>setMobileOpen(false)}>
-                    <History size={20} strokeWidth={2.5} /> <span>History</span>
-                  </Link>
-                </>
-              )}
-              <Link className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-                router.pathname.startsWith('/availability') ? 'text-white bg-gradient-sport' : 'text-gray-700 hover:text-primary-700 hover:bg-primary-50'
-              }`} href="/availability" onClick={()=>setMobileOpen(false)}>
-                <Clock size={20} strokeWidth={2.5} /> <span>Availability</span>
-              </Link>
-              <Link className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-                router.pathname === '/about' ? 'text-white bg-gradient-sport' : 'text-gray-700 hover:text-primary-700 hover:bg-primary-50'
-              }`} href="/about" onClick={()=>setMobileOpen(false)}>
-                <Info size={20} strokeWidth={2.5} /> <span>About</span>
-              </Link>
-              {user?.role === 'admin' && (
-                <Link className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
-                  router.pathname.startsWith('/admin') ? 'text-white bg-gradient-sport' : 'text-gray-700 hover:text-primary-700 hover:bg-primary-50'
-                }`} href="/admin/dashboard" onClick={()=>setMobileOpen(false)}>
-                  <ShieldCheck size={20} strokeWidth={2.5} /> <span>Admin</span>
+                <Link 
+                  href="/bookings" 
+                  onClick={handleNavClick}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-[12px] min-h-[44px] text-sm font-semibold transition-all ${
+                    isActive('/bookings') 
+                      ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 font-bold shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16)]' 
+                      : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB]'
+                  }`}
+                >
+                  <CalendarCheck size={20} strokeWidth={2} /> 
+                  <span>Book</span>
                 </Link>
               )}
+
+              {/* MOBILE EQUIPMENT */}
+              <Link 
+                href="/equipment" 
+                onClick={handleNavClick}
+                className={`flex items-center gap-3 px-4 py-3 rounded-[12px] min-h-[44px] text-sm font-semibold transition-all ${
+                  isActive('/equipment') 
+                    ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 font-bold shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16)]' 
+                    : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB]'
+                }`}
+              >
+                <Dumbbell size={20} strokeWidth={2} /> 
+                <span>Equipment</span>
+              </Link>
+
+              {/* MOBILE HISTORY */}
+              {user?.role !== 'admin' && (
+                <Link 
+                  href="/history" 
+                  onClick={handleNavClick}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-[12px] min-h-[44px] text-sm font-semibold transition-all ${
+                    isActive('/history') 
+                      ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 font-bold shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16)]' 
+                      : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB]'
+                  }`}
+                >
+                  <History size={20} strokeWidth={2} /> 
+                  <span>History</span>
+                </Link>
+              )}
+
+              {/* MOBILE AVAILABILITY */}
+              <Link 
+                href="/availability" 
+                onClick={handleNavClick}
+                className={`flex items-center gap-3 px-4 py-3 rounded-[12px] min-h-[44px] text-sm font-semibold transition-all ${
+                  isActive('/availability') 
+                    ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 font-bold shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16)]' 
+                    : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB]'
+                }`}
+              >
+                <Clock size={20} strokeWidth={2} /> 
+                <span>Availability</span>
+              </Link>
+
+              {/* MOBILE ABOUT */}
+              <Link 
+                href="/about" 
+                onClick={handleNavClick}
+                className={`flex items-center gap-3 px-4 py-3 rounded-[12px] min-h-[44px] text-sm font-semibold transition-all ${
+                  isActive('/about') 
+                    ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 font-bold shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16)]' 
+                    : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB]'
+                }`}
+              >
+                <Info size={20} strokeWidth={2} /> 
+                <span>About</span>
+              </Link>
+
+              {/* MOBILE ADMIN */}
+              {user?.role === 'admin' && (
+                <Link 
+                  href="/admin/dashboard" 
+                  onClick={handleNavClick}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-[12px] min-h-[44px] text-sm font-semibold transition-all ${
+                    isActive('/admin') 
+                      ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 font-bold shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16)]' 
+                      : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB]'
+                }`}
+                >
+                  <ShieldCheck size={20} strokeWidth={2} /> 
+                  <span>Admin</span>
+                </Link>
+              )}
+
+              {/* AUTH / SETTINGS */}
               {!loading && (!user ? (
                 <>
-                  <div className="my-2 border-t border-gray-200"></div>
-                  <Link className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:text-primary-700 hover:bg-primary-50 font-medium transition-colors" href="/login" onClick={()=>setMobileOpen(false)}>
-                    <LogIn size={20} strokeWidth={2.5} /> <span>Login</span>
+                  <div className="my-2 border-t border-[#DCE6F0]"></div>
+                  <Link 
+                    href="/login" 
+                    onClick={handleNavClick}
+                    className="flex items-center gap-3 px-4 py-3 rounded-[12px] min-h-[44px] text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] font-semibold text-sm transition-colors" 
+                  >
+                    <LogIn size={20} strokeWidth={2} /> 
+                    <span>Login</span>
                   </Link>
-                  <Link className="btn btn-primary flex items-center gap-3 font-semibold transition-colors" href="/register" onClick={()=>setMobileOpen(false)}>
-                    <UserPlus size={20} strokeWidth={2.5} /> <span>Register</span>
+                  <Link 
+                    href="/register" 
+                    onClick={handleNavClick}
+                    className="btn btn-primary px-4 py-3 min-h-[44px] text-sm font-bold flex items-center justify-center gap-2" 
+                  >
+                    <UserPlus size={20} strokeWidth={2} /> 
+                    <span>Register</span>
                   </Link>
                 </>
               ) : (
                 <>
-                  <div className="my-2 border-t border-gray-200"></div>
-                  <Link className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:text-primary-700 hover:bg-primary-50 font-medium transition-colors" href="/settings" onClick={()=>setMobileOpen(false)}>
-                    <SettingsIcon size={20} strokeWidth={2.5} /> <span>Settings</span>
+                  <div className="my-2 border-t border-[#DCE6F0]"></div>
+                  <Link 
+                    href="/settings" 
+                    onClick={handleNavClick}
+                    className="flex items-center gap-3 px-4 py-3 rounded-[12px] min-h-[44px] text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] font-semibold text-sm transition-colors" 
+                  >
+                    <SettingsIcon size={20} strokeWidth={2} /> 
+                    <span>Settings</span>
                   </Link>
-                  <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-left text-red-600 hover:text-red-700 hover:bg-red-50 font-medium transition-colors" onClick={()=>{ setMobileOpen(false); logout(); }}>
-                    <LogOut size={20} strokeWidth={2.5} /> <span>Logout</span>
+                  <button 
+                    onClick={() => { setMobileOpen(false); logout(); }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-[12px] min-h-[44px] text-left text-[#EF4444] hover:bg-rose-50/80 font-semibold text-sm transition-colors" 
+                  >
+                    <LogOut size={20} strokeWidth={2} className="text-[#EF4444]" /> 
+                    <span>Logout</span>
                   </button>
                 </>
               ))}
@@ -319,6 +511,8 @@ export default function Navbar() {
           </div>
         </>
       )}
-    </nav>
+    </header>
   );
 }
+
+

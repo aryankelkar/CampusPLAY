@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import { register, login, me, logout } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { validatePassword } from '../utils/passwordValidator.js';
+import { ADMIN_EMAIL } from '../constants/index.js';
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.post(
       return true;
     }),
     body('roll').custom((value, { req }) => {
-      if (req.body.email !== 'admin@campusplay.com' && (!value || String(value).trim() === '')) {
+      if (req.body.email !== ADMIN_EMAIL && (!value || String(value).trim() === '')) {
         throw new Error('Roll number is required');
       }
       return true;

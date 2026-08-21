@@ -1,4 +1,4 @@
-import { BOOKING_STATUS, STATUS_COLORS, STATUS_ICONS, BookingStatus } from '../constants';
+import { BOOKING_STATUS, STATUS_COLORS, STATUS_ICONS, BookingStatus, ADMIN_EMAIL, ROLL_NUMBER_PATTERN } from '../constants';
 
 /**
  * Get status badge classes
@@ -25,10 +25,27 @@ export function getTodayDate(): string {
  * Format date for display
  */
 export function formatDate(date: string): string {
-  return new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
+  if (!date) return '';
+  const d = new Date(date + 'T00:00:00');
+  if (isNaN(d.getTime())) return date;
+  return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+  });
+}
+
+/**
+ * Format short date for display (e.g., "12 Aug 2026")
+ */
+export function formatShortDate(date: string): string {
+  if (!date) return '';
+  const d = new Date(date + 'T00:00:00');
+  if (isNaN(d.getTime())) return date;
+  return d.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 }
 
@@ -61,7 +78,7 @@ export function isToday(date: string): boolean {
  * Validate email domain
  */
 export function isValidCollegeEmail(email: string, allowAdmin = true): boolean {
-  if (allowAdmin && email === 'admin@campusplay.com') return true;
+  if (allowAdmin && email === ADMIN_EMAIL) return true;
   return email.endsWith('@vit.edu.in');
 }
 
@@ -69,7 +86,7 @@ export function isValidCollegeEmail(email: string, allowAdmin = true): boolean {
  * Validate roll number format - Allow any alphanumeric string up to 10 characters
  */
 export function isValidRollNumber(roll: string): boolean {
-  return /^[A-Za-z0-9]{1,10}$/.test(roll);
+  return ROLL_NUMBER_PATTERN.test(roll);
 }
 
 /**
@@ -102,4 +119,14 @@ export function showToast(
 ): void {
   setToast(message);
   setTimeout(() => setToast(null), duration);
+}
+
+/**
+ * Get display time - supports both legacy 'time' and new 'timeSlots' format
+ */
+export function getDisplayTime(booking: any): string {
+  if (booking.timeSlots && booking.timeSlots.length > 0) {
+    return booking.timeSlots.join(', ');
+  }
+  return booking.time || 'N/A';
 }

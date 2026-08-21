@@ -10,6 +10,10 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import equipmentRoutes from './routes/equipmentRoutes.js';
+import equipmentBookingRoutes from './routes/equipmentBookingRoutes.js';
+import facilityRoutes from './routes/facilityRoutes.js';
+import { seedDefaultFacilities } from './services/facilityService.js';
 import { initializeSocket } from './services/socketService.js';
 
 dotenv.config();
@@ -25,6 +29,7 @@ if (missingEnvVars.length > 0) {
 }
 
 const isProduction = process.env.NODE_ENV === 'production';
+const isDevelopment = !isProduction;
 
 const app = express();
 const httpServer = createServer(app);
@@ -40,7 +45,9 @@ const io = new Server(httpServer, {
 initializeSocket(io);
 
 // DB
-connectDB();
+connectDB().then(() => {
+  seedDefaultFacilities();
+});
 
 // Middlewares
 app.use(helmet());
@@ -64,6 +71,9 @@ app.use(
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/equipment', equipmentRoutes);
+app.use('/api/equipment-bookings', equipmentBookingRoutes);
+app.use('/api/facilities', facilityRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
@@ -98,14 +108,14 @@ app.get('/', (req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  if (!isProduction) {
+  if (isDevelopment) {
     console.error('❌ Error:', err);
   }
   const status = err.status || 500;
   res.status(status).json({ 
     success: false,
     message: err.message || 'Server error',
-    ...((!isProduction && err.stack) && { stack: err.stack })
+    ...(isDevelopment && err.stack && { stack: err.stack })
   });
 });
 

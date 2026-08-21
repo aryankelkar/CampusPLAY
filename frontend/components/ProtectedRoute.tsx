@@ -8,12 +8,13 @@ export default function ProtectedRoute({ children, role }: { children: JSX.Eleme
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     const check = async () => {
       try {
         const { data } = await api.get('/auth/me');
         const me = data?.data?.user;
         if (!role || me?.role === role) {
-          setAllowed(true);
+          if (isMounted) setAllowed(true);
         } else {
           router.replace('/');
         }
@@ -22,7 +23,8 @@ export default function ProtectedRoute({ children, role }: { children: JSX.Eleme
       }
     };
     check();
-  }, [router, role]);
+    return () => { isMounted = false; };
+  }, [role]);
 
   if (!allowed) return (
     <div className="flex items-center justify-center py-20">

@@ -32,17 +32,23 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
 
     newSocket.on('connect', () => {
-      console.log('✅ Socket connected:', newSocket.id);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('✅ Socket connected:', newSocket.id);
+      }
       setConnected(true);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('❌ Socket disconnected');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('❌ Socket disconnected');
+      }
       setConnected(false);
     });
 
     newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Socket connection error:', error);
+      }
       setConnected(false);
     });
 

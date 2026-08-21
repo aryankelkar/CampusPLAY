@@ -1,28 +1,27 @@
 import type { AppProps } from 'next/app';
 import '../styles/globals.css';
-import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { AuthProvider } from '../context/AuthContext';
 import { SocketProvider } from '../context/SocketContext';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 import OfflineIndicator from '../components/common/OfflineIndicator';
-const Navbar = dynamic(() => import('../components/Navbar'), { ssr: false });
-const ConnectionStatus = dynamic(() => import('../components/common/ConnectionStatus'), { ssr: false });
+import AppShell from '../components/AppShell';
+import ConnectionStatus from '../components/common/ConnectionStatus';
 import Head from 'next/head';
-import { Inter, Poppins } from 'next/font/google';
+import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 
-const inter = Inter({ 
+const plusJakartaSans = Plus_Jakarta_Sans({ 
   subsets: ['latin'], 
-  weight: ['300', '400', '500', '600'],
-  variable: '--font-inter',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
   display: 'swap',
 });
 
-const poppins = Poppins({ 
+const inter = Inter({ 
   subsets: ['latin'], 
-  weight: ['500', '600', '700'],
-  variable: '--font-poppins',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
   display: 'swap',
 });
 
@@ -47,23 +46,22 @@ export default function MyApp({ Component, pageProps }: AppProps) {
     <ErrorBoundary>
       <AuthProvider>
         <SocketProvider>
-          <div className={`flex min-h-screen flex-col bg-[#F0FDF4] ${inter.variable} ${poppins.variable}`}>
+          <div className={`${plusJakartaSans.variable} ${inter.variable}`}>
             <Head>
-              <title>CampusPlay - Campus Sports Booking</title>
-              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>CampusPlay - University Sports Booking</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
               <meta name="theme-color" content="#2563EB" />
-              <meta name="description" content="Book your favorite sports ground on campus with ease" />
+              <meta name="description" content="Book campus sports grounds and manage reservations easily." />
             </Head>
             {routeLoading && (
-              <div className="fixed inset-x-0 top-0 z-50">
-                <div className="h-1 w-full animate-pulse bg-gradient-sport" />
+              <div className="fixed inset-x-0 top-0 z-[1100]">
+                <div className="h-1 w-full animate-pulse bg-[#2563EB]" />
               </div>
             )}
             <ConnectionStatus />
-            <Navbar />
-            <main className="w-full flex-1">
+            <AppShell>
               <Component {...pageProps} />
-            </main>
+            </AppShell>
             <OfflineIndicator />
           </div>
         </SocketProvider>
@@ -71,3 +69,5 @@ export default function MyApp({ Component, pageProps }: AppProps) {
     </ErrorBoundary>
   );
 }
+
+

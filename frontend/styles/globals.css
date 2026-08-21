@@ -3,176 +3,282 @@
 @tailwind utilities;
 
 /* 
-  🎨 CampusPlay - Sport & Nature Harmony Theme
-  A modern UI theme blending sporty energy with natural calm
-  Design: Light-dark hybrid with earthy tones + athletic accents
+  ⚡ CampusPLAY — Global Cool Blue Soft Neumorphic Design System
+  Designed for Viewport-First UX, high density, and clean university athletic aesthetics.
 */
 
+:root {
+  /* Brand Cool Blue Palette */
+  --background: #F3F7FC;
+  --surface: #FFFFFF;
+  --surface-soft: #EDF4FB;
+
+  --primary: #2563EB;
+  --primary-dark: #1D4ED8;
+  --primary-light: #DBEAFE;
+
+  --secondary: #3B82F6;
+  --cyan-accent: #06B6D4;
+
+  --navy: #0F172A;
+  --navy-soft: #334155;
+
+  --text-primary: #0F172A;
+  --text-secondary: #52657A;
+  --text-muted: #8897A8;
+
+  --border: #DCE6F0;
+  --border-soft: #E8EEF5;
+
+  /* Semantic Feedback */
+  --success: #10B981;
+  --success-bg: #DCFCE7;
+
+  --warning: #F59E0B;
+  --warning-bg: #FEF3C7;
+
+  --danger: #EF4444;
+  --danger-bg: #FEE2E2;
+
+  --info: #0EA5E9;
+  --info-bg: #E0F2FE;
+
+  /* Motion Tokens */
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
+  --duration-slow: 320ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Soft Neumorphism Shadows */
+  --shadow-raised:
+    7px 7px 18px rgba(148, 163, 184, 0.20),
+    -7px -7px 18px rgba(255, 255, 255, 0.90);
+
+  --shadow-soft:
+    4px 4px 10px rgba(148, 163, 184, 0.15),
+    -4px -4px 10px rgba(255, 255, 255, 0.85);
+
+  --shadow-inset:
+    inset 3px 3px 7px rgba(148, 163, 184, 0.18),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.85);
+}
+
 @layer base {
-  /* ✍️ Typography - Clean & Confident */
+  * {
+    border-color: var(--border);
+  }
+
   h1, h2, h3, h4, h5, h6 {
-    @apply font-poppins;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: 0.03em;
-    color: #14532D; /* Forest green for headings */
+    font-family: var(--font-jakarta), var(--font-inter), sans-serif;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    color: var(--navy);
   }
   
-  /* Proper font scaling with vertical rhythm */
   h1 { 
-    font-size: 2.5rem; /* 40px - "Book. Play. Compete." */
+    font-size: clamp(2rem, 4.5vw, 3.25rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+  
+  h2 { 
+    font-size: clamp(1.5rem, 3.2vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  h3 { 
+    font-size: clamp(1.15rem, 2.2vw, 1.45rem);
     font-weight: 700;
   }
-  h2 { font-size: 1.75rem; font-weight: 600; } /* 28px */
-  h3 { font-size: 1.25rem; font-weight: 600; } /* 20px */
-  h4 { font-size: 1.125rem; font-weight: 600; } /* 18px */
-  p { font-size: 1rem; color: #334155; } /* 16px */
-  
-  p, body {
-    @apply font-inter;
-    line-height: 1.6;
-    color: #334155;
+
+  h4 { 
+    font-size: 1.125rem;
+    font-weight: 600;
   }
   
-  button, .btn {
-    @apply font-poppins;
+  p, body, label, input, textarea, select {
+    font-family: var(--font-jakarta), var(--font-inter), sans-serif;
+    line-height: 1.5;
+    color: var(--text-primary);
+  }
+
+  p {
+    color: var(--text-secondary);
+  }
+  
+  button, .btn, a {
+    font-family: var(--font-jakarta), var(--font-inter), sans-serif;
     font-weight: 600;
-    letter-spacing: 0.02em;
+  }
+
+  /* Global Offset to prevent sticky navbar from obscuring content */
+  [id], section, article, h1, h2, h3 {
+    scroll-margin-top: 88px;
   }
 }
 
-/* 🌿 Base Layout */
-html, body, #__next { height: 100%; }
+/* 🌿 Base Viewport Architecture */
+html, body, #__next { 
+  height: 100%; 
+}
+
 body {
-  background-color: #F0FDF4; /* Muted pale green background */
+  background-color: var(--background);
   min-height: 100vh;
-  color: #1E293B;
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
-/* 🪄 Buttons - Active & Vibrant */
+/* 🧼 Webkit Autofill Clean Override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+  -webkit-text-fill-color: #0F172A !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* 🪄 Global Neumorphic Button System */
 .btn { 
-  @apply inline-flex items-center justify-center px-6 py-3 text-sm font-semibold;
-  @apply transition-all duration-200 ease-in-out;
-  @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
-  @apply disabled:opacity-50 disabled:cursor-not-allowed;
-  border-radius: 10px;
-  padding: 0.75rem 1.5rem;
+  @apply inline-flex items-center justify-center text-sm font-semibold tracking-wide;
+  border-radius: 12px;
+  padding: 0.6rem 1.25rem;
+  min-height: 44px;
+  transition: all var(--duration-fast) var(--ease-standard);
+  @apply focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn-primary { 
-  background: linear-gradient(90deg, #22C55E, #2563EB);
-  color: white;
-  font-weight: 600;
-  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
-  @apply focus:ring-primary-500;
+  background-color: var(--primary);
+  color: #FFFFFF !important;
+  border: none;
+  box-shadow: var(--shadow-soft);
 }
 
-.btn-primary:hover {
-  background: linear-gradient(90deg, #16A34A, #1D4ED8);
-  box-shadow: 0 6px 14px rgba(34, 197, 94, 0.4);
-  transform: translateY(-1px) scale(1.03);
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+  color: #FFFFFF !important;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-raised);
 }
 
-.btn-primary:active {
-  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
-  transform: translateY(0) scale(1);
-}
-
-.btn-primary:disabled {
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.5), rgba(37, 99, 235, 0.5));
-  box-shadow: none;
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--shadow-inset);
 }
 
 .btn-secondary { 
-  background: #F3F4F6;
-  color: #1E293B;
-  border: 1px solid #CBD5E1;
-  font-weight: 600;
-  @apply focus:ring-gray-300;
+  background: var(--surface-soft);
+  color: var(--primary-dark);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
 }
 
-.btn-secondary:hover {
-  background: #E5E7EB;
+.btn-secondary:hover:not(:disabled) {
+  background: var(--primary-light);
+  color: var(--primary-dark);
   transform: translateY(-1px);
 }
 
 .btn-outline { 
-  @apply border-2 bg-transparent;
-  border-color: #22C55E;
-  color: #047857;
-  font-weight: 600;
-  @apply hover:bg-primary-50;
-  @apply focus:ring-primary-500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--navy);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--surface-soft);
+  color: var(--primary);
 }
 
 .btn-ghost { 
-  @apply text-primary-700 bg-transparent;
-  @apply hover:bg-primary-50;
-  @apply transition-all duration-150;
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
 }
 
-/* 📝 Input Styles - Clean & Accessible */
-.input { 
-  @apply w-full rounded-lg px-3.5 py-2.5;
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  color: #1E293B;
-  @apply placeholder:text-muted;
-  @apply outline-none transition-all duration-150;
+.btn-ghost:hover:not(:disabled) {
+  background: var(--surface-soft);
+  color: var(--primary);
 }
 
-.input:focus {
-  border-color: #22C55E;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-  background: #FFFFFF;
+.btn-danger {
+  background-color: var(--danger);
+  color: #FFFFFF !important;
+  border: none;
+  box-shadow: var(--shadow-soft);
 }
 
-.input:disabled {
-  background: #F3F4F6;
+.btn-danger:hover:not(:disabled) {
+  background-color: #DC2626;
+  transform: translateY(-1px);
+}
+
+/* 📝 Global Neumorphic Input & Select System */
+.input, .select { 
+  @apply w-full text-sm;
+  padding: 0.625rem 0.875rem;
+  min-height: 44px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--navy);
+  box-shadow: var(--shadow-inset);
+  @apply placeholder:text-[#8897A8];
+  @apply outline-none transition-all duration-200;
+}
+
+.input-has-icon-left {
+  padding-left: 2.75rem !important;
+}
+
+.input-has-icon-right {
+  padding-right: 2.75rem !important;
+}
+
+.input-has-icon-left.input-has-icon-right {
+  padding-left: 2.75rem !important;
+  padding-right: 2.75rem !important;
+}
+
+.input:focus, .select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: var(--surface);
+}
+
+.input:disabled, .select:disabled {
+  background: var(--surface-soft);
+  color: var(--text-muted);
   cursor: not-allowed;
 }
 
-/* 📐 Typography Utilities */
-.page-title { 
-  @apply text-3xl font-bold;
-  color: #14532D;
-  letter-spacing: -0.02em;
-}
-
-.section-title { 
-  @apply text-2xl font-semibold;
-  color: #14532D;
-  letter-spacing: -0.01em;
-}
-
-.label { 
-  @apply text-sm font-medium text-gray-700;
-}
-
-/* Gradient Text - Sport Energy */
-.text-gradient-sport {
-  background: linear-gradient(90deg, #22C55E, #2563EB);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 600;
-}
-
-/* 🧩 Cards - Glass Design (Sport & Nature) */
+/* 🧩 Global Neumorphic Card System */
 .card { 
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  @apply transition-all duration-200 ease-in-out;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-raised);
+  transition: all var(--duration-normal) var(--ease-standard);
 }
 
-.card:hover { 
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+.card-soft {
+  background: var(--surface-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
 }
 
 .card-interactive {
@@ -180,329 +286,90 @@ body {
 }
 
 .card-interactive:hover {
-  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.2);
-  border-color: rgba(34, 197, 94, 0.2);
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-raised);
 }
 
-/* Card with Status Stripe */
-.card-status {
-  @apply card;
-  position: relative;
-  overflow: hidden;
+.card-selected {
+  background: var(--primary-light);
+  border: 1px solid var(--primary);
+  color: var(--primary-dark);
+  box-shadow: var(--shadow-inset);
+  border-radius: 14px;
 }
 
-.card-status::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-}
-
-.card-status-success::before { background: #22C55E; }
-.card-status-warning::before { background: #FBBF24; }
-.card-status-error::before { background: #DC2626; }
-.card-status-info::before { background: #2563EB; }
-
-/* Badge Styles */
+/* 🏷️ Badge & Tag System */
 .badge { 
-  @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
 }
 
-/* Light mode badges - high contrast for visibility */
-.badge-yellow { 
-  background: rgba(251, 191, 36, 0.2); 
-  color: #92400E; 
-  border: 1px solid rgba(251, 191, 36, 0.4); 
-  font-weight: 600;
-}
-.badge-green { 
-  background: rgba(34, 197, 94, 0.2); 
-  color: #14532D; 
-  border: 1px solid rgba(34, 197, 94, 0.4); 
-  font-weight: 600;
-}
-.badge-red { 
-  background: rgba(220, 38, 38, 0.2); 
-  color: #991B1B; 
-  border: 1px solid rgba(220, 38, 38, 0.4); 
-  font-weight: 600;
-}
 .badge-blue { 
-  background: rgba(37, 99, 235, 0.2); 
-  color: #1E40AF; 
-  border: 1px solid rgba(37, 99, 235, 0.4); 
-  font-weight: 600;
+  background: var(--primary-light); 
+  color: var(--primary-dark); 
+  border: 1px solid #BFDBFE; 
 }
+
+.badge-green { 
+  background: var(--success-bg); 
+  color: #047857; 
+  border: 1px solid #A7F3D0; 
+}
+
+.badge-yellow { 
+  background: var(--warning-bg); 
+  color: #B45309; 
+  border: 1px solid #FDE68A; 
+}
+
+.badge-red { 
+  background: var(--danger-bg); 
+  color: #B91C1C; 
+  border: 1px solid #FECACA; 
+}
+
 .badge-gray { 
-  background: rgba(100, 116, 139, 0.2); 
-  color: #334155; 
-  border: 1px solid rgba(100, 116, 139, 0.4); 
-  font-weight: 600;
+  background: var(--surface-soft); 
+  color: var(--text-secondary); 
+  border: 1px solid var(--border); 
 }
 
-/* 🧭 Navbar - Nature-Tech Fusion (Floating Glass) */
-.navbar-glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  position: relative;
+/* 🧭 Navbar Container */
+.navbar-neumorphic {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-raised);
 }
 
-/* Static green gradient line at bottom of navbar */
-.navbar-glass::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #22C55E, #2563EB);
-  border-radius: 0 0 12px 12px;
-}
-
-.nav-link { 
-  @apply font-medium transition-all duration-200;
-  color: #475569;
-}
-
-.nav-link:hover { 
-  color: #14532D;
-}
-
-.nav-link-active { 
-  color: #14532D;
-  font-weight: 600;
-}
-
-/* 📄 Page Layout Utilities */
-.page { @apply mx-auto w-full max-w-6xl px-4 py-6; }
-.page-hero { @apply mx-auto w-full max-w-7xl px-4 py-12; }
-
-/* ⚡ Animations - Natural Motion (200-250ms) */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes slideInRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-.animate-fade-in { animation: fadeIn 150ms ease-out both; }
-.animate-fade-in-up { animation: fadeInUp 200ms ease-out both; }
-.animate-slide-up { animation: slideUp 200ms ease-out both; }
-.animate-slide-in-right { animation: slideInRight 200ms ease-out both; }
-
-/* 🎭 Modal Styles - Scale + Fade from Center */
-@keyframes modalBackdropFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes modalContentScaleIn {
-  from { 
-    opacity: 0; 
-    transform: scale(0.95) translateY(10px);
-  }
-  to { 
-    opacity: 1; 
-    transform: scale(1) translateY(0);
-  }
-}
-
+/* 🎭 Modal System */
 .modal-backdrop { 
-  animation: modalBackdropFadeIn 150ms ease-out both;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(2px);
+  background: rgba(15, 23, 42, 0.50);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .modal-content { 
-  animation: modalContentScaleIn 250ms ease-out both;
-  background: #FFFFFF;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-raised);
 }
 
-/* Modal with nature-green gradient header */
-.modal-header-gradient {
-  background: linear-gradient(135deg, #ECFDF5, #EFF6FF);
-  border-bottom: 1px solid rgba(34, 197, 94, 0.1);
-  border-radius: 12px 12px 0 0;
-}
-
-/* 📊 Progress Bar - Green Step Indicators */
-.progress-bar { 
-  @apply h-1 w-full rounded-full overflow-hidden;
-  background: #E5E7EB;
-}
-
-.progress-bar .bar { 
-  @apply h-full;
-  background: linear-gradient(90deg, #22C55E, #2563EB);
-  animation: progressFill 2.5s ease forwards; 
-  transition: width 250ms ease;
-}
-
-@keyframes progressFill { 
-  from { width: 0%; } 
-  to { width: 100%; } 
-}
-
-/* Step Progress Tracker */
-.step-indicator {
-  @apply w-8 h-8 rounded-full flex items-center justify-center;
-  @apply font-semibold text-sm transition-all duration-200;
-}
-
-.step-indicator.active {
-  background: linear-gradient(135deg, #22C55E, #10B981);
-  color: white;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
-}
-
-.step-indicator.completed {
-  background: #22C55E;
-  color: white;
-}
-
-.step-indicator.pending {
-  background: #F3F4F6;
-  color: #94A3B8;
-  border: 2px solid #E5E7EB;
-}
-
-/* ✅ Success Animations */
-@keyframes checkmarkDraw {
-  0% { stroke-dasharray: 0, 100; opacity: 0; }
-  50% { opacity: 1; }
-  100% { stroke-dasharray: 100, 0; opacity: 1; }
-}
-
-.animate-checkmark { 
-  animation: checkmarkDraw 500ms ease-out forwards; 
-}
-
-@keyframes scaleIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.animate-scale-in { animation: scaleIn 200ms ease-out both; }
+/* ⚡ Viewport & Utility Helpers */
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+.viewport-min-page {
+  min-height: calc(100vh - 90px);
 }
 
-.animate-pulse-glow { animation: pulseGlow 1.5s ease-out infinite; }
-
-/* Toast Notifications - Gradient Style */
-.toast {
-  @apply fixed bottom-4 right-4 z-50;
-  @apply px-4 py-3 rounded-lg;
-  @apply flex items-center gap-2;
-  @apply text-sm font-medium;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  animation: slideInRight 200ms ease-out;
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(100%);
+/* ♿ Reduced Motion Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.toast-success { 
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.9), rgba(22, 163, 74, 0.9));
-  color: #FFFFFF;
-  border: 1px solid rgba(34, 197, 94, 0.3);
-}
-.toast-error { 
-  background: linear-gradient(90deg, rgba(239, 68, 68, 0.9), rgba(220, 38, 38, 0.9));
-  color: #FFFFFF;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-.toast-info { 
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.9), rgba(139, 92, 246, 0.9));
-  color: #FFFFFF;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-/* Loading Spinner */
-.spinner {
-  @apply inline-block w-5 h-5 border-2 border-current border-t-transparent rounded-full;
-  animation: spin 0.6s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* 🎨 Utility Classes for Text Visibility */
-/* Ensure text is visible on light backgrounds */
-.text-on-light {
-  color: #1E293B !important; /* Deep charcoal */
-}
-
-/* Ensure text is visible on dark backgrounds */
-.text-on-dark {
-  color: #FFFFFF !important;
-}
-
-/* Ensure text is visible on colored backgrounds */
-.text-on-primary {
-  color: #FFFFFF !important; /* White text on green */
-}
-
-.text-on-success {
-  color: #FFFFFF !important; /* White text on green */
-}
-
-.text-on-error {
-  color: #FFFFFF !important; /* White text on red */
-}
-
-.text-on-warning {
-  color: #78350F !important; /* Dark brown on amber */
-}
-
-/* Override any conflicting text colors for better visibility */
-.bg-gradient-sport,
-.btn-primary,
-.badge-green,
-.badge-blue,
-.badge-red {
-  color: #FFFFFF;
-}
-
-.badge-yellow {
-  color: #78350F; /* Dark text for light yellow background */
-}
-
-.badge-gray {
-  color: #475569; /* Medium gray text */
 }

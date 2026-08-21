@@ -38,24 +38,23 @@ export default function ConfirmModal({
   if (!open) return null;
   return (
     <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop p-4 animate-fade-in overflow-y-auto"
       onClick={(e) => {
-        // Close on backdrop click
         if (e.target === e.currentTarget) onCancel();
       }}
     >
-      <div className="w-full max-w-lg rounded-3xl bg-white p-6 sm:p-8 shadow-2xl animate-scale-in my-auto max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-lg modal-content p-6 sm:p-7 animate-scale-in my-auto">
         {/* Icon and Title */}
         <div className="flex items-start gap-4 mb-4">
-          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] flex items-center justify-center">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
           <div className="flex-1">
-            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{title}</h3>
+            <h3 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] mb-1">{title}</h3>
             {description && (
-              <div className="text-sm sm:text-base text-gray-700 leading-relaxed">
+              <div className="text-xs sm:text-sm text-[#52657A] leading-relaxed">
                 {description}
               </div>
             )}
@@ -63,21 +62,22 @@ export default function ConfirmModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6 pt-4 border-t border-gray-100">
+        <div className="flex flex-col-reverse sm:flex-row gap-3 mt-6 pt-4 border-t border-[#DCE6F0]">
           <button 
-            className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm sm:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 transition-all duration-200 border-2 border-gray-200 hover:border-gray-300"
+            className="btn btn-outline flex-1 text-xs sm:text-sm"
             onClick={onCancel}
           >
-            {cancelText} <span className="text-xs opacity-60">(Esc)</span>
+            {cancelText} <span className="text-[11px] opacity-60 ml-1">(Esc)</span>
           </button>
           <button 
-            className="flex-1 px-5 py-3 rounded-xl font-semibold text-sm sm:text-base text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 active:from-red-700 active:to-red-800 shadow-lg hover:shadow-xl transition-all duration-200"
+            className="btn btn-primary flex-1 text-xs sm:text-sm"
             onClick={onConfirm}
           >
-            {confirmText} <span className="text-xs opacity-75">(Enter)</span>
+            {confirmText} <span className="text-[11px] opacity-75 ml-1">(Enter)</span>
           </button>
         </div>
       </div>
     </div>
   );
 }
+

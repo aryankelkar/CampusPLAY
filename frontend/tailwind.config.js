@@ -8,15 +8,16 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
+        dmSans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
         inter: ['var(--font-inter)', 'sans-serif'],
         poppins: ['var(--font-poppins)', 'sans-serif'],
-        sans: ['var(--font-inter)', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['var(--font-dm-sans)', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
-        // 🎨 Sport & Nature Harmony Theme - CampusPlay
+        // 🎨 Premium Sports & University Theme - CampusPlay
         primary: {
-          DEFAULT: '#34D399', // Fresh field grass tone
-          50: '#ECFDF5',
+          DEFAULT: '#075B45', // Deep sports green
+          50: '#F0FDF7',
           100: '#D1FAE5',
           200: '#A7F3D0',
           300: '#6EE7B7',
@@ -24,12 +25,12 @@ module.exports = {
           500: '#10B981',
           600: '#059669',
           700: '#047857',
-          800: '#065F46',
+          800: '#075B45', // Deep sports green
           900: '#064E3B',
-          950: '#14532D', // Forest green for headings
+          950: '#032E23', // Deep forest charcoal
         },
         accent: {
-          DEFAULT: '#2563EB', // Cool lake blue
+          DEFAULT: '#2563EB', // Modern Lake Blue
           50: '#EFF6FF',
           100: '#DBEAFE',
           200: '#BFDBFE',
@@ -40,6 +41,11 @@ module.exports = {
           700: '#1D4ED8',
           800: '#1E40AF',
           900: '#1E3A8A',
+        },
+        surface: {
+          DEFAULT: '#FFFFFF',
+          muted: '#F8FAFC',
+          border: '#E2E8F0',
         },
         secondary: {
           DEFAULT: '#F97316', // Active energy orange
@@ -55,20 +61,20 @@ module.exports = {
           900: '#7C2D12',
         },
         success: {
-          DEFAULT: '#22C55E', // Turf green
+          DEFAULT: '#10B981', // Turf green
           50: '#F0FDF4',
           100: '#DCFCE7',
           200: '#BBF7D0',
           300: '#86EFAC',
           400: '#4ADE80',
-          500: '#22C55E',
-          600: '#16A34A',
-          700: '#15803D',
-          800: '#166534',
-          900: '#14532D',
+          500: '#10B981',
+          600: '#059669',
+          700: '#047857',
+          800: '#075B45',
+          900: '#064E3B',
         },
         warning: {
-          DEFAULT: '#FBBF24', // Amber
+          DEFAULT: '#F59E0B',
           50: '#FFFBEB',
           100: '#FEF3C7',
           200: '#FDE68A',
@@ -81,7 +87,7 @@ module.exports = {
           900: '#78350F',
         },
         error: {
-          DEFAULT: '#DC2626', // Red
+          DEFAULT: '#EF4444',
           50: '#FEF2F2',
           100: '#FEE2E2',
           200: '#FECACA',
@@ -95,12 +101,12 @@ module.exports = {
         },
       },
       backgroundColor: {
-        'base': '#F0FDF4', // Muted pale green background
+        'base': '#F7FAF8', // Warm off-white background
         'surface': '#FFFFFF', // Clean white
       },
       textColor: {
         'primary': {
-          DEFAULT: '#1E293B', // Deep charcoal
+          DEFAULT: '#0F172A', // Deep slate/charcoal
           50: '#F8FAFC',
           100: '#F1F5F9',
           200: '#E2E8F0',
@@ -112,15 +118,13 @@ module.exports = {
           800: '#1E293B',
           900: '#0F172A',
         },
-        'muted': '#64748B', // Muted gray-blue
+        'muted': '#64748B',
       },
-      // 🌈 Gradient utilities for Sport & Nature theme
       backgroundImage: {
-        'gradient-sport': 'linear-gradient(90deg, #22C55E, #2563EB)',
-        'gradient-sport-hover': 'linear-gradient(90deg, #16A34A, #1D4ED8)',
-        'gradient-nature': 'linear-gradient(135deg, #ECFDF5, #EFF6FF)',
-        'gradient-energy': 'linear-gradient(90deg, #F97316, #FBBF24)',
-        'gradient-hero': 'linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%)',
+        'gradient-sport': 'linear-gradient(135deg, #075B45 0%, #10B981 100%)',
+        'gradient-sport-hover': 'linear-gradient(135deg, #044E3B 0%, #059669 100%)',
+        'gradient-nature': 'linear-gradient(135deg, #F0FDF7, #EFF6FF)',
+        'gradient-hero': 'linear-gradient(180deg, #F7FAF8 0%, #FFFFFF 100%)',
       },
       backdropBlur: {
         xs: '2px',

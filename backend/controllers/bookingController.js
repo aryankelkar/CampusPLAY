@@ -9,7 +9,10 @@ export const getBookings = async (req, res) => {
   try {
     const baseFilter = req.user?.role === 'student' ? { student: req.user._id } : {};
     const queryFilter = {};
-    if (req.query?.ground) queryFilter.ground = req.query.ground;
+    if (req.query?.ground || req.query?.facility) {
+      const facName = req.query.facility || req.query.ground;
+      queryFilter.$or = [{ facility: facName }, { ground: facName }];
+    }
     if (req.query?.date) queryFilter.date = req.query.date;
     const filter = { ...baseFilter, ...queryFilter };
     const bookings = await Booking.find(filter)
@@ -23,31 +26,47 @@ export const getBookings = async (req, res) => {
 
 export const cancelBooking = async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id).populate('student', 'name email roll');
+    const booking = await bookingService.findBookingById(req.params.id);
     if (!booking) return sendError(res, 'Booking not found', 404);
     
-    // Only students can cancel their own bookings
     if (req.user?.role !== 'student') return sendError(res, 'Only students can cancel their bookings', 403);
     if (String(booking.student._id) !== String(req.user._id)) return sendError(res, 'Not authorized to cancel this booking', 403);
     
-    // Allow canceling Pending or Approved bookings
     if (booking.status !== BOOKING_STATUS.PENDING && booking.status !== BOOKING_STATUS.APPROVED) {
       return sendError(res, 'Only pending or approved bookings can be cancelled', 400);
     }
     
-    // Update booking status
-    booking.status = BOOKING_STATUS.CANCELLED;
-    booking.canceledAt = new Date();
-    booking.canceledBy = req.user.name || req.user.email;
-    await booking.save();
+    const updatedBooking = await bookingService.updateBookingStatus(
+      req.params.id,
+      BOOKING_STATUS.CANCELLED,
+      { canceledBy: req.user.name || req.user.email }
+    );
     
-    // Emit real-time update via Socket.io
-    emitBookingUpdate('booking:cancelled', { booking });
-    
-    console.log(`✅ Booking cancelled by student: ${booking._id}`);
-    return sendSuccess(res, { booking }, 'Booking cancelled successfully. Slot is now available again.');
+    emitBookingUpdate('booking:cancelled', { booking: updatedBooking });
+    return sendSuccess(res, { booking: updatedBooking }, 'Booking cancelled successfully. Slot is now available again.');
   } catch (err) {
-    console.error('❌ Error cancelling booking:', err);
+    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+  }
+};
+
+export const deleteBooking = async (req, res) => {
+  try {
+    const booking = await bookingService.findBookingById(req.params.id);
+    if (!booking) return sendError(res, 'Booking not found', 404);
+    
+    if (req.user?.role === 'student') {
+      if (String(booking.student._id) !== String(req.user._id)) {
+        return sendError(res, 'Not authorized to delete this booking', 403);
+      }
+      if (booking.status !== BOOKING_STATUS.REJECTED && booking.status !== BOOKING_STATUS.CANCELLED) {
+        return sendError(res, 'You can only delete rejected or cancelled bookings', 400);
+      }
+    }
+    
+    await Booking.findByIdAndDelete(req.params.id);
+    emitBookingUpdate('booking:deleted', { booking });
+    return sendSuccess(res, { booking }, 'Booking deleted successfully.');
+  } catch (err) {
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
   }
 };
@@ -57,19 +76,19 @@ export const createBooking = async (req, res) => {
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   try {
-    // Conflict check: prevent duplicate time slot for same date + ground
-    const { ground, date, time } = req.body;
-    const existing = await Booking.findOne({
-      ground,
-      date,
-      time,
-      status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED] }
-    });
-    if (existing) {
-      return sendError(res, ERROR_MESSAGES.SLOT_BOOKED, 409);
+    const { ground, facility, game, sport, date, time, timeSlots } = req.body;
+    const targetFacility = facility || ground;
+    const targetSport = sport || game;
+    const slotsToBook = timeSlots || (time ? [time] : []);
+    
+    if (!slotsToBook || slotsToBook.length === 0) {
+      return sendError(res, 'At least one time slot is required', 400);
+    }
+    
+    if (slotsToBook.length > 2) {
+      return sendError(res, 'Maximum 2 time slots allowed per booking', 400);
     }
 
-    // Validate team members if provided
     const teamMembers = Array.isArray(req.body.teamMembers) ? req.body.teamMembers : [];
     if (teamMembers.length > MAX_TEAM_MEMBERS) {
       return sendError(res, `You can add up to ${MAX_TEAM_MEMBERS} players per booking.`, 400);
@@ -83,13 +102,11 @@ export const createBooking = async (req, res) => {
       if (!m.email.endsWith('@vit.edu.in')) {
         return sendError(res, 'Invalid teammate email domain.', 400);
       }
-      // duplicates in team
       if (seenRolls.has(m.roll) || seenEmails.has(m.email)) {
         return sendError(res, 'Duplicate teammate roll or email detected.', 400);
       }
       seenRolls.add(m.roll);
       seenEmails.add(m.email);
-      // prevent same as main student
       if (req.user?.roll && m.roll === req.user.roll) {
         return sendError(res, 'Teammate roll cannot be the same as the booking student.', 400);
       }
@@ -98,41 +115,32 @@ export const createBooking = async (req, res) => {
       }
     }
 
-    // Snapshot some user fields on the booking
     const snapshot = {
-      name: req.user?.name,
-      email: req.user?.email,
-      roll: req.user?.roll,
-      branch: req.user?.branch,
-      division: req.user?.division,
-      classYear: req.user?.classYear,
+      name: req.user?.name || '',
+      email: req.user?.email || '',
+      roll: req.user?.roll || '',
+      branch: req.user?.branch || '',
+      division: req.user?.division || '',
+      classYear: req.user?.classYear || '',
     };
 
-    // ATOMIC CONFLICT CHECK: Check if slot is already booked (Pending or Approved)
-    const existingBooking = await Booking.findOne({
-      ground: req.body.ground,
-      date: req.body.date,
-      time: req.body.time,
-      status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED] }
-    });
-
-    if (existingBooking) {
-      return sendError(res, '⚠️ This slot was just booked by another student. Please choose another time slot.', 409);
-    }
-
-    // Enforce server-side snapshot fields; do not allow client to override identity fields
-    const booking = await Booking.create({ ...req.body, ...snapshot, teamMembers, student: req.user._id, status: BOOKING_STATUS.PENDING });
+    const bookingData = { 
+      ...req.body, 
+      game: targetSport,
+      ground: targetFacility,
+      facility: targetFacility,
+      timeSlots: slotsToBook,
+      teamMembers, 
+    };
+    delete bookingData.time;
     
-    // Emit real-time update to all connected clients
+    const booking = await bookingService.createBookingWithValidation(bookingData, req.user._id, snapshot);
+    
     emitBookingUpdate('booking:created', { booking });
-    
-    return sendSuccess(res, { booking }, 'Booking created', 201);
+    return sendSuccess(res, { booking }, 'Booking created successfully (Pending Approval)', 201);
   } catch (err) {
-    // Handle duplicate key error from MongoDB unique index
-    if (err.code === 11000) {
-      return sendError(res, '⚠️ This slot was just booked by another student. Please choose another time slot.', 409);
-    }
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    console.error('❌ Error creating booking:', err.message);
+    return sendError(res, err.message || ERROR_MESSAGES.SERVER_ERROR, 400);
   }
 };
 
@@ -141,31 +149,17 @@ export const approveBooking = async (req, res) => {
     const booking = await bookingService.findBookingById(req.params.id);
     if (!booking) return sendError(res, 'Booking not found', 404);
     
-    // Check for conflicts before approving
-    const conflict = await bookingService.checkSlotConflict(
-      booking.ground,
-      booking.date,
-      booking.time,
-      booking._id
-    );
-    
-    if (conflict) {
-      return sendError(res, 'This slot is already approved for another booking. Please reject or revoke the conflicting booking first.', 409);
-    }
-    
-    // Update booking status
     const updatedBooking = await bookingService.updateBookingStatus(
       req.params.id,
       BOOKING_STATUS.APPROVED,
       { approvedBy: req.user?.email || req.user?.name || 'admin' }
     );
     
-    // Emit real-time update
     emitBookingUpdate('booking:approved', { booking: updatedBooking });
-    
-    return sendSuccess(res, { booking: updatedBooking }, 'Booking approved');
+    return sendSuccess(res, { booking: updatedBooking }, 'Booking approved successfully.');
   } catch (err) {
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    console.error('❌ Approval conflict / error:', err.message);
+    return sendError(res, err.message || 'Approval conflict. This facility is already booked for the selected time.', 409);
   }
 };
 
@@ -176,7 +170,6 @@ export const rejectBooking = async (req, res) => {
     
     const reason = req.body?.reason || '';
     
-    // Update booking status
     const updatedBooking = await bookingService.updateBookingStatus(
       req.params.id,
       BOOKING_STATUS.REJECTED,
@@ -186,9 +179,7 @@ export const rejectBooking = async (req, res) => {
       }
     );
     
-    // Emit real-time update
     emitBookingUpdate('booking:rejected', { booking: updatedBooking });
-    
     return sendSuccess(res, { booking: updatedBooking }, 'Booking rejected');
   } catch (err) {
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
@@ -201,8 +192,6 @@ export const setPending = async (req, res) => {
     if (!booking) return sendError(res, 'Booking not found', 404);
     
     const previousStatus = booking.status;
-    
-    // Update booking status to pending
     const updatedBooking = await bookingService.updateBookingStatus(
       req.params.id,
       BOOKING_STATUS.PENDING,
@@ -215,9 +204,7 @@ export const setPending = async (req, res) => {
         ? 'Booking rejection revoked - moved to pending'
         : 'Booking moved to pending';
     
-    // Emit real-time update
     emitBookingUpdate('booking:revoked', { booking: updatedBooking, previousStatus });
-    
     return sendSuccess(res, { booking: updatedBooking }, message);
   } catch (err) {
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
@@ -226,24 +213,11 @@ export const setPending = async (req, res) => {
 
 export const availability = async (req, res) => {
   try {
-    const { date, ground } = req.query;
-    if (!date || !ground) return sendError(res, 'date and ground are required', 400);
-    // Only show Approved bookings as 'Booked'. Pending bookings don't block slots.
-    const bookings = await Booking.find({ date, ground, status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED] } });
-    const bookedTimes = bookings.map((b) => b.time);
-
-    const allSlots = TIME_SLOTS;
-
-    const slots = allSlots.map((slot) => {
-      const match = bookings.find((b) => b.time === slot);
-      return {
-        slot,
-        status: match ? 'Booked' : 'Vacant',
-        bookedBy: match ? (match.name || (match.student && match.student.name) || null) : null,
-        game: match ? match.game : null,
-      };
-    });
-
+    const { date, ground, facility } = req.query;
+    const targetFacility = facility || ground;
+    if (!date || !targetFacility) return sendError(res, 'date and facility are required', 400);
+    
+    const { slots, bookedTimes } = await bookingService.getAvailableSlots(date, targetFacility, TIME_SLOTS);
     return res.status(200).json({ success: true, message: 'Availability', data: { slots, bookedTimes }, bookedTimes });
   } catch (err) {
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);

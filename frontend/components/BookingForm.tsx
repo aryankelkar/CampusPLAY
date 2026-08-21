@@ -1,13 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import api from '../lib/api';
-
-const BRANCHES = ['INFT', 'CMPN', 'EXTC', 'EXCS', 'BIOMED'];
-const DIVISIONS = ['A', 'B', 'C'];
-const YEARS = ['FE', 'SE', 'TE', 'BE'];
-const GAMES = ['Cricket', 'Football', 'Volleyball', 'Badminton'];
-const GROUNDS = ['Ground 1', 'Ground 2'];
-const TIME_SLOTS = ['7–8 AM', '8–9 AM', '9–10 AM', '10–11 AM', '11–12 AM', '4–5 PM', '5–6 PM', '6–7 PM'];
+import { BRANCHES, DIVISIONS, CLASS_YEARS, GAMES, GROUNDS, TIME_SLOTS, MAX_TEAM_MEMBERS, ALLOWED_EMAIL_DOMAIN } from '../constants';
 
 export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
   const router = useRouter();
@@ -19,27 +13,37 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
   const [game, setGame] = useState('');
   const [ground, setGround] = useState('');
   const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
   const [bookedTimes, setBookedTimes] = useState<string[]>([]);
   const [teamMembers, setTeamMembers] = useState<{ name: string; roll: string; email: string }[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
+    let isMounted = true;
+    
     const load = async () => {
       try {
         const { data } = await api.get('/auth/me');
-        const user = data?.data?.user;
-        setMe(user);
-        setBranch(user?.branch || '');
-        setDivision(user?.division || '');
-        setClassYear(user?.classYear || '');
-        setRoll(user?.roll || '');
+        if (isMounted) {
+          const user = data?.data?.user;
+          setMe(user);
+          setBranch(user?.branch || '');
+          setDivision(user?.division || '');
+          setClassYear(user?.classYear || '');
+          setRoll(user?.roll || '');
+        }
       } catch {
-        router.replace('/login');
+        if (isMounted) {
+          router.replace('/login');
+        }
       }
     };
     load();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [router]);
 
   const isFutureDate = useMemo(() => {
@@ -51,16 +55,26 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
   }, [date]);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchAvailability = async () => {
       if (!date || !ground) return;
       try {
         const { data } = await api.get('/bookings/availability', { params: { date, ground } });
-        setBookedTimes(data?.data?.bookedTimes || []);
+        if (isMounted) {
+          setBookedTimes(data?.data?.bookedTimes || []);
+        }
       } catch {
-        setBookedTimes([]);
+        if (isMounted) {
+          setBookedTimes([]);
+        }
       }
     };
     fetchAvailability();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [date, ground]);
 
   const submit = async (e: React.FormEvent) => {
@@ -71,9 +85,17 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
       setError('Date must be today or later');
       return;
     }
+    if (selectedSlots.length === 0) {
+      setError('Please select at least one time slot');
+      return;
+    }
+    if (selectedSlots.length > 2) {
+      setError('You can select a maximum of 2 time slots');
+      return;
+    }
     // client-side validation for team members
-    if (teamMembers.length > 10) {
-      setError('You can add up to 10 players per booking.');
+    if (teamMembers.length > MAX_TEAM_MEMBERS) {
+      setError(`You can add up to ${MAX_TEAM_MEMBERS} players per booking.`);
       return;
     }
     const seenRolls = new Set<string>();
@@ -83,7 +105,7 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
         setError('All team members must have name, roll and email.');
         return;
       }
-      if (!m.email.endsWith('@vit.edu.in')) {
+      if (!m.email.endsWith(ALLOWED_EMAIL_DOMAIN)) {
         setError('Invalid teammate email domain.');
         return;
       }
@@ -103,6 +125,7 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
       }
     }
     try {
+      // Create a single booking with all selected time slots
       const payload = {
         name: me?.name,
         branch,
@@ -111,15 +134,16 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
         ground,
         game,
         date,
-        time,
+        timeSlots: selectedSlots,
         teamMembers,
       };
       await api.post('/bookings', payload);
-      setSuccess('✅ Slot booked successfully! Awaiting admin approval.');
+      
+      setSuccess(`✅ Booking with ${selectedSlots.length} slot(s) submitted successfully! Awaiting admin approval.`);
       setGame('');
       setGround('');
       setDate('');
-      setTime('');
+      setSelectedSlots([]);
       setTeamMembers([]);
       onSuccess();
     } catch (err: any) {
@@ -164,7 +188,7 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
             <label className="text-sm font-medium">Class Year</label>
             <select className="input" value={classYear} onChange={(e) => setClassYear(e.target.value)} required>
               <option value="" disabled>Select</option>
-              {YEARS.map((y) => (<option key={y} value={y}>{y}</option>))}
+              {CLASS_YEARS.map((y) => (<option key={y} value={y}>{y}</option>))}
             </select>
           </div>
           <div>
@@ -189,15 +213,61 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
           </div>
         </div>
         <div>
-          <label className="text-sm font-medium">Time Slot</label>
-          <select className="input" value={time} onChange={(e) => setTime(e.target.value)} required>
-            <option value="" disabled>{!date || !ground ? 'Select date and ground first' : 'Select'}</option>
-            {date && ground && TIME_SLOTS.map((t) => (
-              <option key={t} value={t} disabled={bookedTimes.includes(t)}>
-                {t}{bookedTimes.includes(t) ? ' (Booked)' : ''}
-              </option>
-            ))}
-          </select>
+          <label className="text-sm font-medium">Time Slots (Select up to 2)</label>
+          <div className="mt-2 space-y-2">
+            {date && ground && TIME_SLOTS.map((t) => {
+              const isBooked = bookedTimes.includes(t);
+              const isSelected = selectedSlots.includes(t);
+              const canSelect = !isBooked && (isSelected || selectedSlots.length < 2);
+              
+              return (
+                <label 
+                  key={t} 
+                  className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                    isSelected 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : isBooked 
+                        ? 'border-red-200 bg-red-50 opacity-60 cursor-not-allowed' 
+                        : canSelect
+                          ? 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                          : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    disabled={!canSelect}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        if (selectedSlots.length < 2) {
+                          setSelectedSlots([...selectedSlots, t]);
+                        }
+                      } else {
+                        setSelectedSlots(selectedSlots.filter(s => s !== t));
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className={`flex-1 text-sm font-medium ${
+                    isBooked ? 'text-red-700' : isSelected ? 'text-blue-700' : 'text-gray-700'
+                  }`}>
+                    {t} {isBooked ? '(Booked)' : ''}
+                  </span>
+                  {isSelected && <span className="text-xs text-blue-600 font-semibold">✓ Selected</span>}
+                </label>
+              );
+            })}
+            {(!date || !ground) && (
+              <div className="text-sm text-gray-500 italic p-3 bg-gray-50 rounded-lg">
+                Please select date and ground first to see available time slots
+              </div>
+            )}
+          </div>
+          {selectedSlots.length > 0 && (
+            <div className="mt-3 text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-2">
+              <span className="font-semibold">Selected ({selectedSlots.length}/2):</span> {selectedSlots.join(', ')}
+            </div>
+          )}
         </div>
         <div>
           <div className="mt-4 text-sm font-semibold text-blue-700">Who else is playing with you?</div>
@@ -210,7 +280,7 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
                 <input className="input" placeholder="Roll Number" value={m.roll} onChange={(e) => {
                   const arr = [...teamMembers]; arr[idx] = { ...arr[idx], roll: e.target.value }; setTeamMembers(arr);
                 }} />
-                <input className="input" placeholder="College Email (@vit.edu.in)" value={m.email} onChange={(e) => {
+                <input className="input" placeholder={`College Email (${ALLOWED_EMAIL_DOMAIN})`} value={m.email} onChange={(e) => {
                   const arr = [...teamMembers]; arr[idx] = { ...arr[idx], email: e.target.value }; setTeamMembers(arr);
                 }} />
               </div>
@@ -223,7 +293,7 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
             <button type="button" className="btn btn-secondary" onClick={() => {
               if (teamMembers.length < 10) setTeamMembers([...teamMembers, { name: '', roll: '', email: '' }]);
             }}>Add Player</button>
-            <div className="text-xs text-gray-600">You can add up to 10 players per booking.</div>
+            <div className="text-xs text-gray-600">You can add up to {MAX_TEAM_MEMBERS} players per booking.</div>
           </div>
         </div>
 

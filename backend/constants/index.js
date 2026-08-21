@@ -14,7 +14,7 @@ export const USER_ROLES = {
 
 // Email Domains
 export const ALLOWED_EMAIL_DOMAINS = ['@vit.edu.in'];
-export const ADMIN_EMAIL = 'admin@campusplay.com';
+export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@vit.edu.in';
 
 // Booking Constraints
 export const MAX_TEAM_MEMBERS = 10;

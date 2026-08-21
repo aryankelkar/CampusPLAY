@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import api from '../lib/api';
 
 type User = { _id: string; name: string; email: string; role: 'admin' | 'student' } | null;
@@ -16,7 +16,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     try {
       const { data } = await api.get('/auth/me');
       setUser(data?.data?.user || null);
@@ -25,14 +25,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const logout = async () => {
-    await api.post('/auth/logout');
-    setUser(null);
-  };
+  const logout = useCallback(async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      // Ignore logout errors, clear state anyway
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Logout error:', err);
+      }
+    } finally {
+      setUser(null);
+    }
+  }, []);
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { 
+    refresh(); 
+  }, [refresh]);
 
   return (
     <AuthContext.Provider value={{ user, loading, refresh, logout }}>

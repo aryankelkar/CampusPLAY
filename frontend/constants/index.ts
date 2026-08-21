@@ -16,7 +16,7 @@ export const USER_ROLES = {
 
 // Email Validation
 export const ALLOWED_EMAIL_DOMAIN = '@vit.edu.in';
-export const ADMIN_EMAIL = 'admin@campusplay.com';
+export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@vit.edu.in';
 
 // Academic Constants
 export const BRANCHES = ['INFT', 'CMPN', 'EXTC', 'EXCS', 'BIOMED'] as const;
@@ -24,7 +24,7 @@ export const DIVISIONS = ['A', 'B', 'C', 'D'] as const;
 export const CLASS_YEARS = ['FE', 'SE', 'TE', 'BE'] as const;
 
 // Sports/Games
-export const GAMES = ['Cricket', 'Football', 'Volleyball', 'Badminton'] as const;
+export const GAMES = ['Cricket', 'Football', 'Volleyball', 'Basketball', 'Badminton'] as const;
 
 // Grounds
 export const GROUNDS = ['Ground 1', 'Ground 2'] as const;
@@ -48,8 +48,8 @@ export const TIME_SLOTS = [
 export const MAX_TEAM_MEMBERS = 10;
 export const MAX_TOTAL_PLAYERS = 11; // Including the booking student
 
-// Roll Number Pattern
-export const ROLL_NUMBER_PATTERN = /^\d{2}[A-Z]{2}\d[A-Z]\d{2}[A-Z]{2}$/;
+// Roll Number Pattern - Allow any alphanumeric string up to 10 characters
+export const ROLL_NUMBER_PATTERN = /^[A-Za-z0-9]{1,10}$/;
 
 // Status Colors (Tailwind classes)
 export const STATUS_COLORS = {

@@ -33,15 +33,19 @@ type Tab = 'profile' | 'security' | 'preferences' | 'account';
 export default function SettingsPage() {
   return (
     <ProtectedRoute>
-      <div className="max-w-5xl mx-auto p-6 space-y-6 animate-fade-in-up">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary-600 shadow-sm mb-4">
-            <span className="text-3xl">⚙️</span>
+      <div className="min-h-screen bg-[#FAFBF9] text-slate-900 font-inter py-10 sm:py-16">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#075B45]">Account Management</span>
+            <h1 className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight uppercase mt-2 mb-3">
+              Settings
+            </h1>
+            <p className="text-base text-slate-600 font-normal leading-relaxed">
+              Manage your personal student profile, credentials, security, and activity metrics.
+            </p>
           </div>
-          <h1 className="page-title mb-2">Settings</h1>
-          <p className="text-muted">Manage your profile, security and preferences</p>
+          <Settings />
         </div>
-        <Settings />
       </div>
     </ProtectedRoute>
   );
@@ -87,7 +91,6 @@ function Settings() {
         setClassYear(u?.classYear || '');
         setPhone(u?.phone || '');
         setBio(u?.bio || '');
-        // Fallback: if academic fields missing, try to infer from latest booking snapshot
         if ((!u?.branch || !u?.division || !u?.classYear) && u?.role === 'student') {
           try {
             const { data: bookingsData } = await api.get('/bookings');
@@ -130,11 +133,9 @@ function Settings() {
       } catch (err: any) {
         const status = err?.response?.status;
         if (status === 401) {
-          // Session expired or not authenticated
           window.location.href = '/login';
           return;
         }
-        // For other errors, keep page but show minimal fallback state
         setMe(null);
       } finally {
         setLoading(false);
@@ -142,7 +143,6 @@ function Settings() {
     };
     load();
 
-    // Real-time updates for profile changes
     if (socket) {
       socket.on('profile:updated', (data: any) => {
         if (data?.user) {
@@ -151,7 +151,7 @@ function Settings() {
           setBranch(data.user.branch || '');
           setDivision(data.user.division || '');
           setClassYear(data.user.classYear || '');
-          setToast({message: '✨ Profile updated in real-time', type: 'success'});
+          setToast({message: 'Profile updated in real-time', type: 'success'});
           setTimeout(() => setToast(null), 2000);
         }
       });
@@ -196,14 +196,14 @@ function Settings() {
 
   const saveProfile = async () => {
     if (phone && !validatePhone(phone)) {
-      setToast({message: '⚠️ Invalid phone number. Must be 10 digits starting with 6-9', type: 'error'});
+      setToast({message: 'Invalid phone number. Must be 10 digits starting with 6-9', type: 'error'});
       setTimeout(()=> setToast(null), 3000);
       return;
     }
     try {
       setSaving(true);
       await api.put('/user/update', { name, phone, bio, branch, division, classYear });
-      setToast({message: '✅ Profile updated successfully!', type: 'success'});
+      setToast({message: 'Profile updated successfully!', type: 'success'});
       setTimeout(()=> setToast(null), 2000);
       const { data } = await api.get('/user/profile');
       const u = data?.data?.user; setMe(u);
@@ -223,31 +223,30 @@ function Settings() {
 
   const changePassword = async () => {
     if (!passwordValid) {
-      setToast({message: '⚠️ Please check password requirements', type: 'error'});
+      setToast({message: 'Please check password requirements', type: 'error'});
       setTimeout(()=> setToast(null), 3000);
       return;
     }
     try {
       setSaving(true);
       const { data } = await api.post('/user/change-password', { currentPassword, newPassword });
-      setToast({message: '✅ Password updated successfully!', type: 'success'});
+      setToast({message: 'Password updated successfully!', type: 'success'});
       setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
       setTimeout(()=> setToast(null), 3000);
       return data;
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || 'Incorrect current password';
-      setToast({message: `⚠️ ${errorMessage}`, type: 'error'});
+      setToast({message: `${errorMessage}`, type: 'error'});
       setTimeout(()=> setToast(null), 4000);
     } finally { setSaving(false); }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-inter">
       {toast && (
-        <div className={`fixed right-4 top-20 z-50 rounded-lg px-6 py-4 text-sm text-white shadow-2xl flex items-center gap-2 animate-slide-in-right ${
-          toast.type === 'success' ? 'bg-secondary-600' : 'bg-red-600'
+        <div className={`fixed right-4 top-20 z-50 rounded-xl px-5 py-3.5 text-xs font-bold text-white shadow-xl flex items-center gap-2 animate-slide-in-right ${
+          toast.type === 'success' ? 'bg-[#075B45]' : 'bg-rose-600'
         }`}>
-          <span>{toast.type === 'success' ? '✅' : '⚠️'}</span>
           <span>{toast.message}</span>
         </div>
       )}
@@ -255,60 +254,60 @@ function Settings() {
       {/* Tab Navigation */}
       {showUnsavedWarning && (
         <>
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-fade-in" onClick={cancelTabChange} />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-50 animate-fade-in" onClick={cancelTabChange} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="modal-content max-w-md w-full p-6 animate-scale-in">
-              <h3 className="text-lg font-bold text-primary-900 mb-2">⚠️ Unsaved Changes</h3>
-              <p className="text-gray-700 mb-6">You have unsaved changes in your profile. Do you want to leave without saving?</p>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6">
+              <h3 className="text-base font-black text-slate-950 uppercase tracking-tight mb-2">Unsaved Changes</h3>
+              <p className="text-xs text-slate-600 font-medium mb-6">You have unsaved changes in your profile. Do you want to leave without saving?</p>
               <div className="flex gap-3">
-                <button className="btn btn-outline flex-1" onClick={cancelTabChange}>Stay Here</button>
-                <button className="btn btn-primary flex-1" onClick={confirmTabChange}>Leave Anyway</button>
+                <button className="btn bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 flex-1 text-xs font-bold uppercase py-2.5" onClick={cancelTabChange}>Stay Here</button>
+                <button className="btn bg-[#075B45] hover:bg-[#044E3B] text-white flex-1 text-xs font-bold uppercase py-2.5" onClick={confirmTabChange}>Leave Anyway</button>
               </div>
             </div>
           </div>
         </>
       )}
-      <div className="card p-2 sticky top-20 z-10 bg-white/90 backdrop-blur">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-2 sticky top-20 z-10 shadow-xs">
+        <div className="flex gap-2 overflow-x-auto">
           <button 
-            className={`flex-1 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-150 whitespace-nowrap ${
+            className={`flex-1 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-150 whitespace-nowrap ${
               tab === 'profile' 
-                ? 'bg-primary-600 text-white shadow-sm' 
-                : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-[#075B45] text-white shadow-xs' 
+                : 'text-slate-700 hover:bg-slate-100'
             }`} 
             onClick={()=>handleTabChange('profile')}
           >
-            👤 Profile
+            Profile Info
           </button>
           <button 
-            className={`flex-1 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-150 whitespace-nowrap ${
+            className={`flex-1 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-150 whitespace-nowrap ${
               tab === 'security' 
-                ? 'bg-primary-600 text-white shadow-sm' 
-                : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-[#075B45] text-white shadow-xs' 
+                : 'text-slate-700 hover:bg-slate-100'
             }`} 
             onClick={()=>handleTabChange('security')}
           >
-            🔒 Security
+            Security & Password
           </button>
           <button 
-            className={`flex-1 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-150 whitespace-nowrap ${
+            className={`flex-1 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-150 whitespace-nowrap ${
               tab === 'preferences' 
-                ? 'bg-primary-600 text-white shadow-sm' 
-                : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-[#075B45] text-white shadow-xs' 
+                : 'text-slate-700 hover:bg-slate-100'
             }`} 
             onClick={()=>handleTabChange('preferences')}
           >
-            🎨 Preferences
+            Preferences
           </button>
           <button 
-            className={`flex-1 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-150 whitespace-nowrap ${
+            className={`flex-1 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-150 whitespace-nowrap ${
               tab === 'account' 
-                ? 'bg-primary-600 text-white shadow-sm' 
-                : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-[#075B45] text-white shadow-xs' 
+                : 'text-slate-700 hover:bg-slate-100'
             }`} 
             onClick={()=>handleTabChange('account')}
           >
-            📊 Account Info
+            Activity & Stats
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
+import { History, ArrowRight } from 'lucide-react';
 import ProtectedRoute from '../components/ProtectedRoute';
 import BookingWizard from '../components/BookingWizard';
 
@@ -19,64 +20,47 @@ function Bookings() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-120px)] max-w-4xl mx-auto px-4 py-6 animate-fade-in-up">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary-600 shadow-sm mb-4">
-          <span className="text-3xl">🏏</span>
+    <div className="min-h-[calc(100vh-64px)] bg-[#F3F7FC] text-[#0F172A] font-inter py-6 sm:py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        
+        {/* Compact Header */}
+        <div className="mb-6 text-center max-w-xl mx-auto">
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#DBEAFE] text-[#2563EB] text-[11px] font-extrabold uppercase tracking-[0.08em] mb-1.5 border border-[#BFDBFE]">
+            Ground Reservation
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight mb-1">
+            Reserve Your Ground
+          </h1>
+          <p className="text-xs sm:text-sm text-[#52657A] font-normal leading-relaxed">
+            Choose a sport, select a ground and time slot, then submit your reservation request.
+          </p>
         </div>
-        <h1 className="page-title mb-2">Book a Ground</h1>
-        <p className="text-muted">Reserve your spot and get ready to play</p>
-      </div>
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="card p-5 bg-primary-50 border-primary-200">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary-100 border border-primary-200 grid place-items-center text-2xl">🎮</div>
-            <div>
-              <div className="text-sm font-semibold text-primary-700">Step 1</div>
-              <div className="text-xs text-muted">Choose sport & ground</div>
-            </div>
-          </div>
+        {/* Main Booking Workspace */}
+        <div className="bg-white rounded-[22px] border border-[#E8EEF5] p-5 sm:p-7 mb-6 shadow-[6px_6px_18px_rgba(148,163,184,0.14),-6px_-6px_18px_rgba(255,255,255,0.9)]">
+          <BookingWizard key={refreshKey} onSuccess={handleBookingSuccess} />
         </div>
-        <div className="card p-5 bg-secondary-50 border-secondary-200">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-secondary-100 border border-secondary-200 grid place-items-center text-2xl">📅</div>
-            <div>
-              <div className="text-sm font-semibold text-secondary-700">Step 2</div>
-              <div className="text-xs text-muted">Pick date & time slot</div>
-            </div>
-          </div>
-        </div>
-        <div className="card p-5 bg-accent-50 border-accent-200">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-accent-100 border border-accent-200 grid place-items-center text-2xl">👥</div>
-            <div>
-              <div className="text-sm font-semibold text-accent-700">Step 3</div>
-              <div className="text-xs text-muted">Add team members</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Booking Wizard */}
-      <BookingWizard key={refreshKey} onSuccess={handleBookingSuccess} />
-
-      {/* Quick Links */}
-      <div className="mt-8 card p-6 bg-gradient-to-r from-primary-50 to-secondary-50">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <h3 className="font-semibold text-primary mb-1">Need to check your bookings?</h3>
-            <p className="text-sm text-muted">View your booking status and history</p>
+        {/* Track Reservations Banner */}
+        <div className="rounded-[18px] bg-white border border-[#E8EEF5] p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[4px_4px_12px_rgba(148,163,184,0.10)]">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-[12px] bg-[#DBEAFE] text-[#2563EB] flex items-center justify-center flex-shrink-0 font-bold">
+              <History size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-[#0F172A]">Track Your Reservations</h3>
+              <p className="text-xs text-[#52657A]">Check active approvals, status, or squad details anytime.</p>
+            </div>
           </div>
           <Link 
             href="/history" 
-            className="btn btn-outline px-6 py-2.5 flex items-center gap-2"
+            className="btn btn-outline px-4 py-2.5 rounded-[10px] font-bold text-xs text-[#2563EB] border border-[#DCE6F0] hover:bg-[#EFF6FF] transition-all flex items-center gap-1.5 flex-shrink-0"
           >
-            <span>📚</span> <span>View History</span>
+            <span>View History</span>
+            <ArrowRight size={14} />
           </Link>
         </div>
+
       </div>
     </div>
   );

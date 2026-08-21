@@ -1,41 +1,120 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import api from '../../lib/api';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import PageHeader from '../../components/common/PageHeader';
+import StatusTag from '../../components/common/StatusTag';
+import AdminTabs from '../../components/AdminTabs';
+import AdminEquipmentList from '../../components/AdminEquipmentList';
+import AdminFacilityList from '../../components/AdminFacilityList';
+import { getDisplayTime } from '../../utils/helpers';
+import { 
+  Search, 
+  CheckCircle2, 
+  XCircle, 
+  RotateCcw, 
+  ChevronDown, 
+  ChevronUp, 
+  Trash2,
+  ShieldCheck,
+  Trophy,
+  MapPin,
+  Calendar,
+  Clock,
+  User,
+  X,
+  AlertCircle,
+  Loader2,
+  Dumbbell,
+  Building2
+} from 'lucide-react';
 
 export default function AdminDashboardPage() {
+  const [activeModule, setActiveModule] = useState<'grounds' | 'equipment' | 'facilities'>('grounds');
+
   return (
     <ProtectedRoute role="admin">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <PageHeader title="Admin Dashboard" subtitle="Manage booking requests and approvals" />
-        <AdminDashboard />
+      <div className="min-h-[calc(100vh-64px)] bg-[#F3F7FC] text-[#0F172A] font-inter py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          
+          {/* Admin Eyebrow & Title */}
+          <div className="text-center max-w-xl mx-auto mb-6">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#DBEAFE] text-[#2563EB] text-[11px] font-extrabold uppercase tracking-[0.08em] mb-1.5 border border-[#BFDBFE]">
+              Administration Workspace
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0F172A] tracking-tight mb-1 uppercase">
+              Admin Operations
+            </h1>
+            <p className="text-xs sm:text-sm text-[#52657A] font-normal leading-relaxed">
+              Review and manage campus sports facility reservations, equipment inventory requests, and campus facility status.
+            </p>
+          </div>
+
+          {/* Module Switcher */}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex p-1.5 bg-[#E2E8F0] rounded-2xl border border-[#CBD5E1] flex-wrap justify-center gap-1">
+              <button
+                onClick={() => setActiveModule('grounds')}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
+                  activeModule === 'grounds'
+                    ? 'bg-[#2563EB] text-white shadow-md'
+                    : 'text-[#52657A] hover:text-[#0F172A]'
+                }`}
+              >
+                <Trophy size={15} />
+                <span>Facility Bookings</span>
+              </button>
+              <button
+                onClick={() => setActiveModule('equipment')}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
+                  activeModule === 'equipment'
+                    ? 'bg-[#2563EB] text-white shadow-md'
+                    : 'text-[#52657A] hover:text-[#0F172A]'
+                }`}
+              >
+                <Dumbbell size={15} />
+                <span>Equipment Requests</span>
+              </button>
+              <button
+                onClick={() => setActiveModule('facilities')}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
+                  activeModule === 'facilities'
+                    ? 'bg-[#2563EB] text-white shadow-md'
+                    : 'text-[#52657A] hover:text-[#0F172A]'
+                }`}
+              >
+                <Building2 size={15} />
+                <span>Facilities Setup</span>
+              </button>
+            </div>
+          </div>
+
+          {activeModule === 'grounds' ? (
+            <AdminDashboard />
+          ) : activeModule === 'equipment' ? (
+            <AdminEquipmentList />
+          ) : (
+            <AdminFacilityList />
+          )}
+        </div>
       </div>
     </ProtectedRoute>
   );
 }
 
-function Tag({ status }: { status: 'Pending' | 'Approved' | 'Rejected' }) {
-  const cls = status === 'Approved' ? 'badge-green' : status === 'Rejected' ? 'badge-red' : 'badge-yellow';
-  return <span className={`badge ${cls}`}>{status}</span>;
-}
-
 function AdminDashboard() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  // Removed daily view; only requests are shown
   const [statusFilter, setStatusFilter] = useState<'all' | 'Pending' | 'Approved' | 'Rejected' | 'Cancelled'>('all');
   const [query, setQuery] = useState('');
   const [gameFilter, setGameFilter] = useState<string>('all');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<{ id: string; action: 'approve' | 'reject' | 'pending'; row?: any } | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<{ id: string; action: 'approve' | 'reject' | 'pending' | 'delete'; row?: any } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const load = async () => {
     try {
@@ -65,9 +144,18 @@ function AdminDashboard() {
 
   useEffect(() => { load(); }, []);
 
-  const act = async (id: string, action: 'approve' | 'reject' | 'pending', reason?: string) => {
+  const act = async (id: string, action: 'approve' | 'reject' | 'pending' | 'delete', reason?: string) => {
     try {
+      setActionLoading(id);
       let response;
+      
+      if (action === 'delete') {
+        await api.delete(`/bookings/${id}`);
+        setRows((prev) => prev.filter((r) => r._id !== id));
+        setToast({ message: 'Booking record deleted.', type: 'success' });
+        setTimeout(() => setToast(null), 3000);
+        return;
+      }
       
       if (action === 'reject') {
         response = await api.patch(`/bookings/${id}/reject`, { reason: reason || '' });
@@ -77,62 +165,36 @@ function AdminDashboard() {
         response = await api.patch(`/bookings/${id}/pending`);
       }
       
-      // Real-time update: Use the booking data returned from API
       const updatedBooking = response.data?.data?.booking;
       
       if (updatedBooking) {
         setRows((prev) => prev.map((r) => (r._id === id ? { ...r, ...updatedBooking } : r)));
       }
       
-      // Success messages
       const messages = {
-        approve: '✅ Booking approved successfully',
-        reject: '❌ Booking rejected successfully',
-        pending: '🔄 Booking revoked - moved to pending'
+        approve: 'BOOKING APPROVED successfully.',
+        reject: 'BOOKING REJECTED successfully.',
+        pending: 'Decision revoked — moved to Pending review.'
       };
       
-      setToast({ message: messages[action], type: 'success' });
+      setToast({ message: messages[action as keyof typeof messages], type: 'success' });
       setTimeout(() => setToast(null), 3000);
       
     } catch (error: any) {
-      // Handle specific error messages from backend
-      const errorMessage = error?.response?.data?.message || 'Action failed. Please try again.';
-      
+      const errorMessage = error?.response?.data?.message || 'Action failed.';
       setToast({ message: `⚠️ ${errorMessage}`, type: 'error' });
       setTimeout(() => setToast(null), 4000);
-      
-      // Reload to ensure consistency on error
       load();
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const requestConfirm = (id: string, action: 'approve' | 'reject' | 'pending', row?: any) => {
+  const requestConfirm = (id: string, action: 'approve' | 'reject' | 'pending' | 'delete', row?: any) => {
     setConfirmTarget({ id, action, row });
     if (action === 'reject') setRejectReason('');
     setConfirmOpen(true);
   };
-
-  // count-up animation (derive from counts with capitalized keys)
-  const [anim, setAnim] = useState({ pending: 0, approved: 0, rejected: 0 });
-  const pendingCount = statusCounts.Pending;
-  const approvedCount = statusCounts.Approved;
-  const rejectedCount = statusCounts.Rejected;
-  useEffect(() => {
-    const duration = 600; const fps = 30; const steps = Math.round((duration/1000)*fps);
-    let i = 0; const start = { pending: 0, approved: 0, rejected: 0 };
-    const iv = setInterval(() => {
-      i += 1; const t = i/steps;
-      setAnim({
-        pending: Math.round(start.pending + t * pendingCount),
-        approved: Math.round(start.approved + t * approvedCount),
-        rejected: Math.round(start.rejected + t * rejectedCount),
-      });
-      if (i >= steps) clearInterval(iv);
-    }, 1000/fps);
-    return () => clearInterval(iv);
-  }, [pendingCount, approvedCount, rejectedCount]);
-
-  // Daily View removed
 
   const filteredRows = useMemo(() => {
     let list = statusFilter === 'all' ? rows : rows.filter((r) => r.status === statusFilter);
@@ -148,249 +210,374 @@ function AdminDashboard() {
     );
   }, [rows, statusFilter, query, gameFilter]);
 
-  // Flat list rendering (no grouped sections)
-  const listToRender = filteredRows;
-
-  const StatusChip = ({ status }: { status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' }) => {
-    const cls = status === 'Approved'
-      ? 'bg-gradient-to-r from-emerald-100 to-green-100 text-green-700'
-      : status === 'Rejected'
-        ? 'bg-gradient-to-r from-rose-100 to-red-100 text-red-700'
-        : status === 'Cancelled'
-          ? 'bg-gray-100 text-gray-700'
-          : 'bg-gradient-to-r from-amber-100 to-yellow-100 text-yellow-700';
-    return <span className={`px-3 py-1 rounded-full text-sm font-medium ${cls}`}>{status}</span>;
-  };
-
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
-      {/* Toast */}
+    <div className="space-y-6">
+      
+      {/* Toast Notification */}
       {toast && (
-        <div className={`fixed right-4 top-20 z-50 rounded-lg px-3 py-2 text-sm shadow ${toast.type==='success'?'bg-green-600 text-white':'bg-red-600 text-white'}`}>{toast.message}</div>
+        <div className={`fixed top-20 right-4 z-50 px-4 py-2.5 rounded-[12px] shadow-xl text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-top-2 duration-200 ${
+          toast.type === 'success' 
+            ? 'bg-[#2563EB] text-white' 
+            : 'bg-rose-600 text-white'
+        }`}>
+          <span>{toast.type === 'success' ? '✓' : '⚠️'}</span>
+          <span>{toast.message}</span>
+        </div>
       )}
-      {/* Summary cards as interactive filters */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <div className={`rounded-xl p-4 shadow-sm cursor-pointer transition hover:shadow-md ${statusFilter==='all'?'ring-1 ring-blue-300':''}`} style={{ background: '#E3F2FD' }} onClick={()=>setStatusFilter('all')}>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">📊 All</div>
-            <div className="text-xs text-gray-500">Everything</div>
-          </div>
-          <div className="mt-2 text-3xl font-bold text-blue-700">{statusCounts.all}</div>
-        </div>
-        <div className={`rounded-xl p-4 shadow-sm cursor-pointer transition hover:shadow-md ${statusFilter==='Pending'?'ring-1 ring-amber-300':''}`} style={{ background: '#FFFDE7' }} onClick={()=>setStatusFilter('Pending')}>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">⏳ Pending</div>
-            <div className="text-xs text-gray-500">Awaiting action</div>
-          </div>
-          <div className="mt-2 text-3xl font-bold text-amber-700">{anim.pending}</div>
-        </div>
-        <div className={`rounded-xl p-4 shadow-sm cursor-pointer transition hover:shadow-md ${statusFilter==='Approved'?'ring-1 ring-emerald-300':''}`} style={{ background: '#E8F5E9' }} onClick={()=>setStatusFilter('Approved')}>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">✅ Approved</div>
-            <div className="text-xs text-gray-500">All set</div>
-          </div>
-          <div className="mt-2 text-3xl font-bold text-emerald-700">{anim.approved}</div>
-        </div>
-        <div className={`rounded-xl p-4 shadow-sm cursor-pointer transition hover:shadow-md ${statusFilter==='Rejected'?'ring-1 ring-rose-300':''}`} style={{ background: '#FFEBEE' }} onClick={()=>setStatusFilter('Rejected')}>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">❌ Rejected</div>
-            <div className="text-xs text-gray-500">Needs attention</div>
-          </div>
-          <div className="mt-2 text-3xl font-bold text-rose-700">{anim.rejected}</div>
-        </div>
-      </div>
 
-      {/* Search + Optional dropdown */}
-      {/* Search */}
-      <div className="flex items-center gap-2">
-        <div className="flex max-w-md flex-1 items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm">
-          <span className="text-slate-400">🔎</span>
-          <input aria-label="Search" className="search-anim flex-1 bg-transparent outline-none" placeholder="Search by student, sport, ground, date" value={query} onChange={(e)=>setQuery(e.target.value)} />
+      {/* Primary Main Workspace Container */}
+      <div className="bg-white rounded-[22px] border border-[#E8EEF5] p-5 sm:p-7 shadow-[6px_6px_18px_rgba(148,163,184,0.14),-6px_-6px_18px_rgba(255,255,255,0.9)]">
+        
+        {/* Navigation Tabs */}
+        <div className="flex justify-center mb-6">
+          <AdminTabs />
         </div>
-        <select aria-label="Filter by game" className="input min-w-[160px]" value={gameFilter} onChange={(e)=>setGameFilter(e.target.value)}>
-          {uniqueGames.map((g) => (
-            <option key={g} value={g}>{g === 'all' ? 'All games' : g}</option>
-          ))}
-        </select>
-        {query && <button className="btn btn-ghost border border-gray-300" onClick={()=>setQuery('')}>Clear</button>}
-      </div>
-      {loading ? (
-        <Loader className="py-6" />
-      ) : filteredRows.length === 0 ? (
-        <EmptyState title="No new requests today. Time for a coffee ☕" subtitle="Fresh requests will show up here." />
-      ) : (
-        <div className="space-y-3">
-          <AnimatePresence>
-            {listToRender.map((r) => {
-              const cardBorder = r.status === 'Approved' ? 'border-l-green-400' : r.status === 'Rejected' ? 'border-l-rose-400' : 'border-l-amber-400';
+
+        {/* Metric Summary Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-6">
+          <button 
+            type="button"
+            className={`p-4 rounded-[16px] border text-left transition-all duration-200 h-[96px] flex flex-col justify-between ${
+              statusFilter === 'all' 
+                ? 'border-[#2563EB] bg-[#EFF6FF] text-[#1D4ED8] shadow-[inset_0_2px_4px_rgba(37,99,235,0.06)] ring-2 ring-[#2563EB]/20'
+                : 'border-[#E8EEF5] bg-white hover:bg-slate-50 text-[#0F172A]'
+            }`} 
+            onClick={() => setStatusFilter('all')}
+          >
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#52657A]">Total Requests</div>
+            <div className="text-2xl font-extrabold text-[#0F172A]">{statusCounts.all}</div>
+          </button>
+
+          <button 
+            type="button"
+            className={`p-4 rounded-[16px] border text-left transition-all duration-200 h-[96px] flex flex-col justify-between ${
+              statusFilter === 'Pending' 
+                ? 'border-[#D97706] bg-[#FEF3C7]/50 text-[#D97706] shadow-[inset_0_2px_4px_rgba(217,119,6,0.06)] ring-2 ring-[#D97706]/20'
+                : 'border-[#E8EEF5] bg-white hover:bg-slate-50 text-[#0F172A]'
+            }`} 
+            onClick={() => setStatusFilter('Pending')}
+          >
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#D97706]">Pending</div>
+            <div className="text-2xl font-extrabold text-[#D97706]">{statusCounts.Pending}</div>
+          </button>
+
+          <button 
+            type="button"
+            className={`p-4 rounded-[16px] border text-left transition-all duration-200 h-[96px] flex flex-col justify-between ${
+              statusFilter === 'Approved' 
+                ? 'border-[#10B981] bg-[#D1FAE5]/50 text-[#10B981] shadow-[inset_0_2px_4px_rgba(16,185,129,0.06)] ring-2 ring-[#10B981]/20'
+                : 'border-[#E8EEF5] bg-white hover:bg-slate-50 text-[#0F172A]'
+            }`} 
+            onClick={() => setStatusFilter('Approved')}
+          >
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#10B981]">Approved</div>
+            <div className="text-2xl font-extrabold text-[#10B981]">{statusCounts.Approved}</div>
+          </button>
+
+          <button 
+            type="button"
+            className={`p-4 rounded-[16px] border text-left transition-all duration-200 h-[96px] flex flex-col justify-between ${
+              statusFilter === 'Rejected' 
+                ? 'border-rose-500 bg-rose-50 text-rose-600 shadow-[inset_0_2px_4px_rgba(244,63,94,0.06)] ring-2 ring-rose-500/20'
+                : 'border-[#E8EEF5] bg-white hover:bg-slate-50 text-[#0F172A]'
+            }`} 
+            onClick={() => setStatusFilter('Rejected')}
+          >
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-rose-600">Rejected</div>
+            <div className="text-2xl font-extrabold text-rose-600">{statusCounts.Rejected}</div>
+          </button>
+        </div>
+
+        {/* Controls: Search + Sport Dropdown Filter */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6 p-4 rounded-[18px] bg-[#F8FAFC] border border-[#E2E8F0]">
+          <div className="relative flex-1">
+            <input 
+              aria-label="Search" 
+              className="input pl-10 pr-8 py-2.5 text-xs font-semibold h-[46px] rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs w-full" 
+              placeholder="Search by student, sport, ground, date..." 
+              value={query} 
+              onChange={(e) => setQuery(e.target.value)} 
+            />
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#52657A]" />
+            {query && (
+              <button className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-[#52657A] hover:text-[#0F172A] p-0.5 rounded-full" onClick={() => setQuery('')}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          
+          <select 
+            aria-label="Filter by game" 
+            className="select text-xs font-semibold py-2.5 px-3 h-[46px] min-w-[160px] rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs" 
+            value={gameFilter} 
+            onChange={(e) => setGameFilter(e.target.value)}
+          >
+            {uniqueGames.map((g) => (
+              <option key={g} value={g}>{g === 'all' ? 'All Sports' : g}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Requests Queue List */}
+        {loading ? (
+          <div className="space-y-3 animate-pulse">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-16 rounded-[16px] bg-[#EFF6FF] border border-[#BFDBFE]/50" />
+            ))}
+          </div>
+        ) : filteredRows.length === 0 ? (
+          <EmptyState title="NO REQUESTS FOUND" subtitle="There are no reservation requests matching your current filter criteria." />
+        ) : (
+          <div className="space-y-3">
+            {filteredRows.map((r) => {
+              const isExpanded = Boolean(expanded[r._id]);
+              const studentName = r.name || r.student?.name || '-';
+              const studentRoll = r.roll || r.student?.roll || '';
+              
               return (
-                <motion.div
-                  layout
+                <div
                   key={r._id}
-                  initial={{ y: -8, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 8, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 320, damping: 26, mass: 0.6 }}
-                  className={`rounded-xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md border-l-4 ${cardBorder}`}
+                  className="bg-white rounded-[16px] border border-[#E8EEF5] p-4 font-inter hover:border-[#BFDBFE] hover:bg-[#F8FBFF] transition-all duration-200 shadow-xs"
                 >
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex flex-col">
-                      <span className="text-lg font-semibold">{r.game} @ {r.ground}</span>
-                      <span className="text-sm text-gray-600">{r.date} • {r.time}</span>
-                      <span className="text-sm text-gray-700">Student: {(r.student?.name || r.name) || '-'}{(r.student?.roll || r.roll) ? ` • ${(r.student?.roll || r.roll)}` : ''}</span>
+                  {/* Compact High-Density Row Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    
+                    <div className="flex items-center gap-3 flex-1 flex-wrap sm:flex-nowrap">
+                      <div className="w-24 flex-shrink-0">
+                        <StatusTag status={r.status} />
+                      </div>
+
+                      <div className="flex-1 min-w-[180px]">
+                        <div className="text-xs font-extrabold text-[#0F172A] flex items-center gap-1.5">
+                          <User size={13} className="text-[#2563EB]" />
+                          <span>{studentName}</span>
+                          {studentRoll && <span className="text-[#52657A] font-semibold text-[11px]">({studentRoll})</span>}
+                        </div>
+                        <div className="text-[11px] text-[#52657A] font-medium flex items-center gap-1 mt-0.5">
+                          <Trophy size={12} className="text-[#2563EB]" />
+                          <span className="font-bold text-[#0F172A]">{r.game}</span>
+                          <span>•</span>
+                          <MapPin size={12} className="text-[#2563EB]" />
+                          <span>{r.ground}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-xs font-semibold text-[#52657A] flex items-center gap-2 flex-shrink-0">
+                        <span className="flex items-center gap-1 text-[#0F172A] font-bold">
+                          <Calendar size={13} className="text-[#2563EB]" />
+                          {r.date}
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1 text-[#2563EB] font-bold">
+                          <Clock size={13} />
+                          {getDisplayTime(r)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <StatusChip status={r.status} />
-                      <button className="btn btn-ghost border border-blue-300 text-blue-700 transition transform hover:-translate-y-0.5" onClick={() => setExpanded({ ...expanded, [r._id]: !expanded[r._id] })}>
-                        {expanded[r._id] ? 'Hide' : 'View'} Details
+
+                    <div className="flex items-center gap-2 justify-end flex-shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#E8EEF5]">
+                      <button 
+                        className="btn text-[#2563EB] bg-[#EFF6FF] hover:bg-[#DBEAFE] border border-[#BFDBFE] px-3 py-1.5 rounded-[10px] text-xs font-bold flex items-center gap-1 transition-all" 
+                        onClick={() => setExpanded({ ...expanded, [r._id]: !isExpanded })}
+                      >
+                        <span>{isExpanded ? 'Hide' : 'View'}</span>
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
                     </div>
+
                   </div>
 
-                  <AnimatePresence>
-                    {expanded[r._id] && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="border-t border-gray-100"
-                      >
-                        <div className="p-4">
-                          <div className="grid gap-4 md:grid-cols-2">
-                            <div>
-                              <h3 className="mb-2 font-semibold text-blue-700">Student Details</h3>
-                              <div className="text-sm text-gray-700 space-y-1">
-                                <div><span className="text-gray-500">Name:</span> {r.name || r.student?.name || '-'}</div>
-                                <div><span className="text-gray-500">Roll No:</span> {r.roll || r.student?.roll || '-'}</div>
-                                <div><span className="text-gray-500">Email:</span> {r.email || r.student?.email || '-'}</div>
-                                <div><span className="text-gray-500">Branch:</span> {r.branch || r.student?.branch || '-'}</div>
-                                <div><span className="text-gray-500">Division:</span> {r.division || r.student?.division || '-'}</div>
-                                <div><span className="text-gray-500">Class Year:</span> {r.classYear || r.student?.classYear || '-'}</div>
-                              </div>
-                            </div>
-                            <div>
-                              <h3 className="mb-2 font-semibold text-blue-700">Booking Info</h3>
-                              <div className="text-sm text-gray-700 space-y-1">
-                                <div><span className="text-gray-500">Game:</span> {r.game}</div>
-                                <div><span className="text-gray-500">Ground:</span> {r.ground}</div>
-                                <div><span className="text-gray-500">Date:</span> {r.date}</div>
-                                <div><span className="text-gray-500">Time:</span> {r.time}</div>
-                                <div><span className="text-gray-500">Status:</span> <StatusChip status={r.status} /></div>
-                              </div>
-                            </div>
-                          </div>
+                  {/* Expanded Detail Panel */}
+                  {isExpanded && (
+                    <div className="mt-4 pt-4 border-t border-[#E8EEF5] space-y-4 animate-in fade-in duration-200 text-xs">
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        
+                        {/* Student Profile Info */}
+                        <div className="bg-[#F8FAFC] p-4 rounded-[14px] border border-[#E2E8F0] space-y-2">
+                          <h4 className="font-extrabold text-[#2563EB] text-[11px] uppercase tracking-wider border-b border-[#E2E8F0] pb-1 flex items-center gap-1">
+                            <ShieldCheck size={13} />
+                            <span>Student Information</span>
+                          </h4>
+                          <div className="flex justify-between"><span className="text-[#52657A]">Name:</span> <strong className="text-[#0F172A] font-bold">{r.name || r.student?.name || '-'}</strong></div>
+                          <div className="flex justify-between"><span className="text-[#52657A]">Roll No:</span> <strong className="text-[#0F172A] font-bold">{r.roll || r.student?.roll || '-'}</strong></div>
+                          <div className="flex justify-between"><span className="text-[#52657A]">Email:</span> <strong className="text-[#0F172A] font-bold truncate max-w-[180px]">{r.email || r.student?.email || '-'}</strong></div>
+                          <div className="flex justify-between"><span className="text-[#52657A]">Branch:</span> <strong className="text-[#0F172A] font-bold">{r.branch || r.student?.branch || '-'}</strong></div>
+                          <div className="flex justify-between"><span className="text-[#52657A]">Division:</span> <strong className="text-[#0F172A] font-bold">{r.division || r.student?.division || '-'}</strong></div>
+                        </div>
 
-                          {Array.isArray(r.teamMembers) && r.teamMembers.length > 0 && (
-                            <div className="mt-4">
-                              <h3 className="mb-2 font-semibold text-blue-700">Team Members</h3>
-                              <div className="overflow-x-auto">
-                                <table className="w-full min-w-[400px] text-left text-sm">
-                                  <thead className="bg-gray-100 text-gray-700">
-                                    <tr>
-                                      <th className="p-2">Name</th>
-                                      <th className="p-2">Roll No</th>
-                                      <th className="p-2">Email</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {r.teamMembers.map((m: any, idx: number) => (
-                                      <tr key={idx} className="border-b border-gray-100">
-                                        <td className="p-2">{m.name}</td>
-                                        <td className="p-2">{m.roll}</td>
-                                        <td className="p-2">{m.email}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                        {/* Booking Specification */}
+                        <div className="bg-[#F8FAFC] p-4 rounded-[14px] border border-[#E2E8F0] space-y-2">
+                          <h4 className="font-extrabold text-[#2563EB] text-[11px] uppercase tracking-wider border-b border-[#E2E8F0] pb-1 flex items-center gap-1">
+                            <Trophy size={13} />
+                            <span>Booking Specification</span>
+                          </h4>
+                          <div className="flex justify-between"><span className="text-[#52657A]">Sport:</span> <strong className="text-[#0F172A] font-bold">{r.game}</strong></div>
+                          <div className="flex justify-between"><span className="text-[#52657A]">Ground:</span> <strong className="text-[#0F172A] font-bold">{r.ground}</strong></div>
+                          <div className="flex justify-between"><span className="text-[#52657A]">Date:</span> <strong className="text-[#0F172A] font-bold">{r.date}</strong></div>
+                          <div className="flex justify-between"><span className="text-[#52657A]">Time:</span> <strong className="text-[#2563EB] font-bold">{getDisplayTime(r)}</strong></div>
+                          <div className="flex justify-between items-center"><span className="text-[#52657A]">Status:</span> <StatusTag status={r.status} /></div>
+                        </div>
+
+                      </div>
+
+                      {/* Squad Members */}
+                      {Array.isArray(r.teamMembers) && r.teamMembers.length > 0 && (
+                        <div className="bg-[#F8FAFC] p-4 rounded-[14px] border border-[#E2E8F0]">
+                          <h4 className="font-extrabold text-[#0F172A] text-[11px] uppercase tracking-wider mb-2">Squad Members ({r.teamMembers.length})</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {r.teamMembers.map((m: any, idx: number) => (
+                              <div key={idx} className="bg-white p-2.5 rounded-[10px] border border-[#E8EEF5]">
+                                <div className="font-bold text-[#0F172A]">{m.name}</div>
+                                <div className="text-[11px] text-[#52657A] mt-0.5">{m.roll} • {m.email}</div>
                               </div>
-                            </div>
-                          )}
-
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {r.status === 'Pending' && (
-                              <>
-                                <button title="Confirm and allot this slot." onClick={() => requestConfirm(r._id, 'approve', r)} className="btn transition transform hover:-translate-y-0.5" style={{ background: 'linear-gradient(90deg,#22C55E,#16A34A)', color: '#fff' }}>Approve</button>
-                                <button title="Deny booking and free the slot." onClick={() => requestConfirm(r._id, 'reject', r)} className="btn btn-ghost border border-red-300 text-red-600 transition transform hover:-translate-y-0.5">Reject</button>
-                              </>
-                            )}
-                            {r.status === 'Approved' && (
-                              <>
-                                <button title="Move back to Pending." onClick={() => requestConfirm(r._id, 'pending', r)} className="btn btn-ghost border border-yellow-300 text-yellow-700 transition transform hover:-translate-y-0.5">Revoke</button>
-                                <button title="Mark as Rejected." onClick={() => requestConfirm(r._id, 'reject', r)} className="btn btn-ghost border border-red-300 text-red-600 transition transform hover:-translate-y-0.5">Mark Rejected</button>
-                              </>
-                            )}
-                            {r.status === 'Rejected' && (
-                              <>
-                                <button title="Move back to Pending." onClick={() => requestConfirm(r._id, 'pending', r)} className="btn btn-ghost border border-yellow-300 text-yellow-700 transition transform hover:-translate-y-0.5">Revoke</button>
-                                <button title="Approve this slot." onClick={() => requestConfirm(r._id, 'approve', r)} className="btn transition transform hover:-translate-y-0.5" style={{ background: 'linear-gradient(90deg,#22C55E,#16A34A)', color: '#fff' }}>Approve</button>
-                              </>
-                            )}
-                          </div>
-
-                          {/* Audit trail (optional) */}
-                          <div className="mt-4">
-                            <h3 className="mb-2 font-semibold text-blue-700">History</h3>
-                            <div className="text-sm text-gray-700 space-y-1">
-                              {r.createdAt && (
-                                <div>📌 Created: {new Date(r.createdAt).toLocaleString()}</div>
-                              )}
-                              {r.approvedAt && (
-                                <div>🟢 Approved: {new Date(r.approvedAt).toLocaleString()} {r.approvedBy ? `by ${r.approvedBy}` : ''}</div>
-                              )}
-                              {r.rejectedAt && (
-                                <div>🔴 Rejected: {new Date(r.rejectedAt).toLocaleString()} {r.rejectedBy ? `by ${r.rejectedBy}` : ''} {r.rejectionReason ? `• Reason: ${r.rejectionReason}` : ''}</div>
-                              )}
-                              {r.status === 'Pending' && (r.approvedAt || r.rejectedAt) && (
-                                <div>🟡 Reverted to Pending</div>
-                              )}
-                            </div>
+                            ))}
                           </div>
                         </div>
-                      </motion.div>
-                          )}
-                        </AnimatePresence>
-                </motion.div>
+                      )}
+
+                      {/* Admin Approval Actions Bar */}
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#E8EEF5]">
+                        {r.status === 'Pending' && (
+                          <>
+                            <button 
+                              onClick={() => requestConfirm(r._id, 'approve', r)} 
+                              disabled={actionLoading === r._id}
+                              className="btn btn-primary px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-[10px] flex items-center gap-1.5 text-white shadow-xs"
+                            >
+                              {actionLoading === r._id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                              <span>APPROVE REQUEST</span>
+                            </button>
+                            
+                            <button 
+                              onClick={() => requestConfirm(r._id, 'reject', r)} 
+                              disabled={actionLoading === r._id}
+                              className="btn text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-[10px] flex items-center gap-1.5"
+                            >
+                              <XCircle size={14} />
+                              <span>REJECT REQUEST</span>
+                            </button>
+                          </>
+                        )}
+                        
+                        {r.status === 'Approved' && (
+                          <>
+                            <button 
+                              onClick={() => requestConfirm(r._id, 'pending', r)} 
+                              disabled={actionLoading === r._id}
+                              className="btn text-[#D97706] bg-[#FEF3C7]/60 hover:bg-[#FEF3C7] border border-[#FDE68A] px-3.5 py-2 text-xs font-bold rounded-[10px] flex items-center gap-1"
+                            >
+                              <RotateCcw size={13} />
+                              <span>Revoke to Pending</span>
+                            </button>
+                            
+                            <button 
+                              onClick={() => requestConfirm(r._id, 'reject', r)} 
+                              disabled={actionLoading === r._id}
+                              className="btn text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3.5 py-2 text-xs font-bold rounded-[10px]"
+                            >
+                              Mark Rejected
+                            </button>
+                          </>
+                        )}
+                        
+                        {r.status === 'Rejected' && (
+                          <>
+                            <button 
+                              onClick={() => requestConfirm(r._id, 'pending', r)} 
+                              disabled={actionLoading === r._id}
+                              className="btn text-[#D97706] bg-[#FEF3C7]/60 hover:bg-[#FEF3C7] border border-[#FDE68A] px-3.5 py-2 text-xs font-bold rounded-[10px] flex items-center gap-1"
+                            >
+                              <RotateCcw size={13} />
+                              <span>Revoke Decision</span>
+                            </button>
+                            
+                            <button 
+                              onClick={() => requestConfirm(r._id, 'approve', r)} 
+                              disabled={actionLoading === r._id}
+                              className="btn btn-primary px-3.5 py-2 text-xs font-extrabold uppercase tracking-wider rounded-[10px] text-white"
+                            >
+                              Approve Slot
+                            </button>
+                          </>
+                        )}
+                        
+                        {(r.status === 'Rejected' || r.status === 'Cancelled') && (
+                          <button 
+                            onClick={() => requestConfirm(r._id, 'delete', r)} 
+                            disabled={actionLoading === r._id}
+                            className="btn text-[#52657A] bg-[#F8FAFC] hover:bg-slate-100 border border-[#DCE6F0] px-3.5 py-2 text-xs font-bold rounded-[10px] flex items-center gap-1 ml-auto"
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete Record</span>
+                          </button>
+                        )}
+                      </div>
+
+                    </div>
+                  )}
+
+                </div>
               );
             })}
-          </AnimatePresence>
-        </div>
-      )}
+          </div>
+        )}
 
+      </div>
+
+      {/* Confirmation Modal */}
       <ConfirmModal
         open={confirmOpen}
-        title={confirmTarget?.action === 'approve' ? '✅ Approve Booking?' : confirmTarget?.action === 'reject' ? '⚠️ Reject Booking Request' : '🟡 Revoke Decision?'}
+        title={
+          confirmTarget?.action === 'approve' ? 'APPROVE BOOKING REQUEST?' : 
+          confirmTarget?.action === 'reject' ? 'REJECT BOOKING REQUEST' : 
+          confirmTarget?.action === 'delete' ? 'DELETE BOOKING RECORD?' :
+          'REVOKE DECISION?'
+        }
         description={confirmTarget ? (
-          <div className="text-sm space-y-2">
+          <div className="text-xs space-y-2.5">
             {confirmTarget.action === 'approve' ? (
               <>
-                <div>You’re about to approve this slot for <b>{confirmTarget.row?.name || confirmTarget.row?.student?.name || 'student'}</b>.</div>
-                <div>Sport: <b>{confirmTarget.row?.game}</b> | Ground: <b>{confirmTarget.row?.ground}</b> | Time: <b>{confirmTarget.row?.time}</b></div>
-                <div className="text-xs text-gray-500">Once approved, the student will be notified.</div>
+                <p className="text-[#52657A]">Approve slot reservation for <strong className="text-[#0F172A]">{confirmTarget.row?.name || confirmTarget.row?.student?.name || 'Student'}</strong>:</p>
+                <div className="bg-[#EFF6FF] p-3 rounded-[12px] border border-[#BFDBFE] text-[#0F172A] space-y-0.5">
+                  <div className="font-extrabold text-sm">{confirmTarget.row?.game} at {confirmTarget.row?.ground}</div>
+                  <div className="text-xs text-[#2563EB] font-bold">{confirmTarget.row?.date} • {getDisplayTime(confirmTarget.row)}</div>
+                </div>
               </>
             ) : confirmTarget.action === 'reject' ? (
               <>
-                <div>Please provide a reason (optional but recommended).</div>
-                <textarea className="input h-24" placeholder="E.g., Ground unavailable during this time." value={rejectReason} onChange={(e)=>setRejectReason(e.target.value)} />
+                <p className="text-[#52657A]">Optionally specify rejection reason:</p>
+                <textarea 
+                  className="input text-xs py-2 px-3 h-20 w-full rounded-[10px] border border-[#DCE6F0]" 
+                  placeholder="E.g. Ground undergoing scheduled campus maintenance." 
+                  value={rejectReason} 
+                  onChange={(e) => setRejectReason(e.target.value)} 
+                />
               </>
+            ) : confirmTarget.action === 'delete' ? (
+              <p className="text-[#52657A]">Permanently remove this booking record from the system database?</p>
             ) : (
-              <>
-                <div>This will move the booking back to <b>Pending</b>. Continue?</div>
-              </>
+              <p className="text-[#52657A]">Revert this booking request back to Pending status for review?</p>
             )}
           </div>
         ) : null}
-        confirmText={confirmTarget?.action === 'approve' ? 'Confirm Approval' : confirmTarget?.action === 'reject' ? 'Confirm Rejection' : 'Confirm Revoke'}
+        confirmText={
+          confirmTarget?.action === 'approve' ? 'Approve Request' : 
+          confirmTarget?.action === 'reject' ? 'Reject Request' : 
+          confirmTarget?.action === 'delete' ? 'Delete Record' :
+          'Revoke'
+        }
         cancelText="Cancel"
         onCancel={() => { setConfirmOpen(false); setConfirmTarget(null); }}
         onConfirm={async () => {
           if (confirmTarget) {
-            await act(confirmTarget.id, confirmTarget.action, confirmTarget.action==='reject'?rejectReason:undefined);
+            await act(confirmTarget.id, confirmTarget.action, confirmTarget.action === 'reject' ? rejectReason : undefined);
           }
           setConfirmOpen(false);
           setConfirmTarget(null);
         }}
       />
+
     </div>
   );
 }

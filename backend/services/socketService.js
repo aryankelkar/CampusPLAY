@@ -8,22 +8,30 @@ export const initializeSocket = (socketIO) => {
   io = socketIO;
   
   io.on('connection', (socket) => {
-    console.log(`✅ Client connected: ${socket.id}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`✅ Client connected: ${socket.id}`);
+    }
 
     socket.on('disconnect', () => {
-      console.log(`❌ Client disconnected: ${socket.id}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`❌ Client disconnected: ${socket.id}`);
+      }
     });
 
     // Join admin room
     socket.on('join-admin', () => {
       socket.join('admin-room');
-      console.log(`Admin joined: ${socket.id}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Admin joined: ${socket.id}`);
+      }
     });
 
     // Join student room
     socket.on('join-student', (userId) => {
       socket.join(`student-${userId}`);
-      console.log(`Student ${userId} joined: ${socket.id}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Student ${userId} joined: ${socket.id}`);
+      }
     });
   });
 };
