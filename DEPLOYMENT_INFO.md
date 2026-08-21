@@ -68,7 +68,32 @@ curl -X POST https://campusplay-4g0z.onrender.com/api/auth/register \
 - [ ] Booking creation tested
 - [ ] Real-time updates tested
 
-## 🔧 Troubleshooting
+## � Local Development Setup
+
+### Running Locally with Local Backend
+**Frontend (.env.local):**
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+```
+
+**Backend (.env):**
+```env
+PORT=5000
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000
+```
+
+### Running Locally with Production Backend
+**Frontend (.env.local):**
+```env
+NEXT_PUBLIC_API_URL=https://campusplay-4g0z.onrender.com
+NEXT_PUBLIC_SOCKET_URL=https://campusplay-4g0z.onrender.com
+```
+
+**Note:** This configuration allows local frontend to use the live backend.
+
+## �🔧 Troubleshooting
 
 ### Authentication Issues
 If login/register fails:

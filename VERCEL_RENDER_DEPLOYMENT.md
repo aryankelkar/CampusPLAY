@@ -3,7 +3,32 @@
 
 This guide will help you deploy CampusPlay to production using **Vercel** for the frontend and **Render** for the backend.
 
-## 🚨 Quick Fix: Authentication Not Working After Deployment?
+## � Local Development vs Production
+
+### Local Development (Both Frontend + Backend locally)
+**Frontend `.env.local`:**
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+```
+
+**Backend `.env`:**
+```env
+PORT=5000
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000
+```
+
+### Local Frontend + Production Backend
+**Frontend `.env.local`:**
+```env
+NEXT_PUBLIC_API_URL=https://campusplay-4g0z.onrender.com
+NEXT_PUBLIC_SOCKET_URL=https://campusplay-4g0z.onrender.com
+```
+
+**Note:** Useful for testing frontend against live backend without running local backend.
+
+## �🚨 Quick Fix: Authentication Not Working After Deployment?
 
 If login/register fails after deployment, this is the **#1 issue**:
 
