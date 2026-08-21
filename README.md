@@ -158,7 +158,7 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 ```env
 PORT=5000
 NODE_ENV=production
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/campusplay
+MONGO_URI=mongodb+srv://admin:<db_password>@campusplay-cluster.ukkoffp.mongodb.net/?appName=campusplay-cluster
 JWT_SECRET=your_super_secret_jwt_key_minimum_32_characters
 CORS_ORIGIN=https://your-frontend-url.com
 ADMIN_EMAIL=admin@vit.edu.in

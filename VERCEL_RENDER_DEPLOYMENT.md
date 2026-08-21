@@ -3,6 +3,21 @@
 
 This guide will help you deploy CampusPlay to production using **Vercel** for the frontend and **Render** for the backend.
 
+## 🚨 Quick Fix: Authentication Not Working After Deployment?
+
+If login/register fails after deployment, this is the **#1 issue**:
+
+**Problem**: Frontend can't connect to backend because `NEXT_PUBLIC_API_URL` is not set in Vercel.
+
+**Solution**:
+1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+2. Add: `NEXT_PUBLIC_API_URL = https://your-backend.onrender.com`
+3. Add: `NEXT_PUBLIC_SOCKET_URL = https://your-backend.onrender.com`
+4. **Important**: Redeploy your Vercel project (env vars require redeploy)
+5. Clear browser cache and test again
+
+**Verification**: Open browser DevTools → Network tab. All API calls should go to your Render URL, NOT localhost:5000.
+
 ---
 
 ## 📋 Prerequisites
@@ -29,7 +44,7 @@ Save this for your Render environment variables.
 2. Create a free cluster
 3. Create database user with strong password
 4. Whitelist IP addresses (use `0.0.0.0/0` for cloud deployment)
-5. Get connection string: `mongodb+srv://username:password@cluster.mongodb.net/campusplay`
+5. Get connection string: `mongodb+srv://admin:<db_password>@campusplay-cluster.ukkoffp.mongodb.net/?appName=campusplay-cluster`
 
 ---
 
@@ -56,7 +71,7 @@ Your backend is already configured with:
 ```
 PORT=5000
 NODE_ENV=production
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/campusplay?retryWrites=true&w=majority
+MONGO_URI=mongodb+srv://admin:<db_password>@campusplay-cluster.ukkoffp.mongodb.net/?appName=campusplay-cluster
 JWT_SECRET=your_generated_32_char_secret
 CORS_ORIGIN=https://your-vercel-app.vercel.app
 ADMIN_EMAIL=admin@vit.edu.in
@@ -102,6 +117,8 @@ NEXT_PUBLIC_API_URL=https://your-app.onrender.com
 NEXT_PUBLIC_SOCKET_URL=https://your-app.onrender.com
 ```
 
+**⚠️ CRITICAL:** Make sure both variables are set to the same URL (your Render backend URL)
+
 5. Click "Deploy"
 6. Wait for deployment (1-2 minutes)
 7. Copy your Vercel URL: `https://your-app.vercel.app`
@@ -145,6 +162,13 @@ curl -X POST https://your-app.onrender.com/api/auth/register \
   -d '{"email":"test@vit.edu.in","password":"test123","roll":"24CS1C0001","name":"Test User"}'
 ```
 
+### 2. Test Frontend Authentication
+1. Open browser DevTools (F12) → Console
+2. Check for API calls going to `localhost:5000` ❌
+3. All API calls should go to your Render URL ✅
+4. Check Network tab for failed requests
+5. Verify cookies are being set (Application → Cookies)
+
 ### 2. Test Frontend
 1. Open your Vercel URL
 2. Try registering a new account
@@ -179,11 +203,19 @@ curl -X POST https://your-app.onrender.com/api/auth/register \
 
 ### Common Issues:
 
-**1. CORS Errors**
+**1. Authentication Failures (Login/Register not working)**
+- **Most Common Cause**: `NEXT_PUBLIC_API_URL` not set in Vercel
+- **Check**: Vercel dashboard → Settings → Environment Variables
+- **Verify**: Set `NEXT_PUBLIC_API_URL=https://your-backend.onrender.com`
+- **Redeploy**: After setting environment variables, redeploy Vercel project
+- **Browser Console**: Check for API calls to `localhost:5000` (indicates missing env var)
+
+**2. CORS Errors**
 - Ensure `CORS_ORIGIN` on Render matches your Vercel URL exactly
 - Check for trailing slashes in URLs
+- After updating CORS_ORIGIN, redeploy Render backend
 
-**2. MongoDB Connection Failed**
+**3. MongoDB Connection Failed**
 - Verify IP whitelist in MongoDB Atlas (0.0.0.0/0)
 - Check connection string format
 - Ensure database user has correct permissions
@@ -192,6 +224,13 @@ curl -X POST https://your-app.onrender.com/api/auth/register \
 - Verify `NEXT_PUBLIC_SOCKET_URL` matches backend URL
 - Check that backend Socket.io is running
 - Ensure no firewall blocks WebSocket connections
+
+**4. Environment Variables Not Working**
+- **Symptom**: API calls still go to localhost in production
+- **Cause**: Environment variables set after initial deployment
+- **Fix**: Set variables first, then redeploy project
+- **Check**: In Vercel dashboard, verify variables are listed
+- **Redeploy**: Manual redeploy required after adding env vars
 
 **4. Build Failures**
 - Check Node.js version (requires 18+)
