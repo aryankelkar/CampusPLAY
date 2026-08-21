@@ -21,9 +21,9 @@ router.post(
 router.patch('/:id/approve', protect, adminOnly, approveBooking);
 router.patch('/:id/reject', protect, adminOnly, rejectBooking);
 router.patch('/:id/pending', protect, adminOnly, setPending);
+// Cancelling is a status transition, not a deletion: booking history is kept.
 router.patch('/:id/cancel', protect, cancelBooking);
-
-router.delete('/:id', protect, cancelBooking);
+router.post('/:id/cancel', protect, cancelBooking);
 
 // Availability for a given date and ground
 router.get('/availability', protect, availability);

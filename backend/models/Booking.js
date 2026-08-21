@@ -13,7 +13,7 @@ const bookingSchema = new mongoose.Schema(
     email: { type: String },
     roll: { type: String },
     branch: { type: String, enum: ['INFT', 'CMPN', 'EXTC', 'EXCS', 'BIOMED'] },
-    division: { type: String, enum: ['A', 'B', 'C'] },
+    division: { type: String, enum: ['A', 'B', 'C', 'D'] },
     classYear: { type: String, enum: ['FE', 'SE', 'TE', 'BE'] },
     teamMembers: [
       {
@@ -29,20 +29,22 @@ const bookingSchema = new mongoose.Schema(
     approvedAt: { type: Date },
     rejectedAt: { type: Date },
     canceledAt: { type: Date },
+    canceledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );
 
-// Compound index to prevent double bookings on same ground, date, time with active status
-// Only one Pending or Approved booking allowed per slot
+// Database-level concurrency guard: at most one active (Pending or Approved)
+// booking per ground/date/time. `status` is deliberately NOT part of the key,
+// otherwise a Pending and an Approved booking could coexist on the same slot.
 bookingSchema.index(
-  { ground: 1, date: 1, time: 1, status: 1 },
-  { 
+  { ground: 1, date: 1, time: 1 },
+  {
     unique: true,
-    partialFilterExpression: { 
-      status: { $in: ['Pending', 'Approved'] } 
+    partialFilterExpression: {
+      status: { $in: ['Pending', 'Approved'] },
     },
-    name: 'unique_active_booking_per_slot'
+    name: 'unique_active_slot',
   }
 );
 
