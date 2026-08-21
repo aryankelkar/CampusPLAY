@@ -120,6 +120,7 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 ## 📚 Documentation
 
 ### Deployment & Optimization
+- **[VERCEL_RENDER_DEPLOYMENT.md](./VERCEL_RENDER_DEPLOYMENT.md)** - Complete deployment guide for Vercel (frontend) + Render (backend)
 - **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Complete deployment instructions for Render/Railway
 - **[OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)** - Full optimization and refactoring details
 - **[OPTIMIZATION_REPORT.md](./OPTIMIZATION_REPORT.md)** - Previous optimization documentation
@@ -147,7 +148,9 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 
 ## 🚀 Production Deployment
 
-> **📖 See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for complete step-by-step deployment instructions**
+> **📖 See [VERCEL_RENDER_DEPLOYMENT.md](./VERCEL_RENDER_DEPLOYMENT.md) for complete Vercel + Render deployment guide**
+
+> **Alternative: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** for Render/Railway deployment
 
 ### Quick Environment Setup
 

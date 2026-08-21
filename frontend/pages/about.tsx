@@ -7,7 +7,6 @@ export default function About() {
     { name: 'Aryan Kelkar', role: 'Backend & System Architecture', focus: 'API & Real-time Sockets' },
     { name: 'Pranay Belnekar', role: 'Frontend & UI Engineering', focus: 'Product & Design System' },
     { name: 'Prathamesh Salunkhe', role: 'UX & State Integration', focus: 'Workflow & Form Flow' },
-    { name: 'Ayush Kamble', role: 'Testing & Verification', focus: 'Quality Assurance & Docs' },
   ];
 
   return (
