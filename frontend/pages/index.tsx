@@ -27,12 +27,12 @@ export default function Home() {
   useEffect(() => {
     const load = async () => {
       try {
-        const { data: authData } = await api.get('/auth/me');
+        const { data: authData } = await api.get('/api/auth/me');
         const u = authData?.data?.user || null; 
         setUser(u);
         
         try {
-          const { data: bData } = await api.get('/bookings');
+          const { data: bData } = await api.get('/api/bookings');
           setBookings(bData?.data?.bookings || []);
         } catch {}
       } catch {} finally {

@@ -11,7 +11,7 @@ export default function ProtectedRoute({ children, role }: { children: JSX.Eleme
     let isMounted = true;
     const check = async () => {
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get('/api/auth/me');
         const me = data?.data?.user;
         if (!role || me?.role === role) {
           if (isMounted) setAllowed(true);

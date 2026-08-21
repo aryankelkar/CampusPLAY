@@ -31,10 +31,10 @@ export const register = async (req, res) => {
       ? { name, email, password, role: USER_ROLES.ADMIN }
       : { name, email, password, role: USER_ROLES.STUDENT, roll, branch, division, classYear };
     const user = await User.create(payload);
-    generateToken(res, user._id, user.role);
+    const token = generateToken(res, user._id, user.role);
     return sendSuccess(
       res,
-      { user: { _id: user._id, name: user.name, email: user.email, role: user.role, roll: user.roll, branch: user.branch, division: user.division, classYear: user.classYear } },
+      { token, user: { _id: user._id, name: user.name, email: user.email, role: user.role, roll: user.roll, branch: user.branch, division: user.division, classYear: user.classYear } },
       'Registered successfully',
       201
     );
@@ -58,8 +58,8 @@ export const login = async (req, res) => {
     const isMatch = await user.matchPassword(password);
     if (!isMatch) return sendError(res, ERROR_MESSAGES.INVALID_CREDENTIALS, 401);
 
-    generateToken(res, user._id, user.role);
-    return sendSuccess(res, { user: { _id: user._id, name: user.name, email: user.email, role: user.role, roll: user.roll, branch: user.branch, division: user.division, classYear: user.classYear } }, 'Logged in');
+    const token = generateToken(res, user._id, user.role);
+    return sendSuccess(res, { token, user: { _id: user._id, name: user.name, email: user.email, role: user.role, roll: user.roll, branch: user.branch, division: user.division, classYear: user.classYear } }, 'Logged in');
   } catch (err) {
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
   }

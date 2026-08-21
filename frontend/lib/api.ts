@@ -7,6 +7,22 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// Request interceptor: dynamic localhost baseURL fallback & Bearer token attachment
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    // If the browser is on localhost/127.0.0.1, always communicate with localhost:5000
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      config.baseURL = 'http://localhost:5000';
+    }
+
+    const token = localStorage.getItem('campusplay_token');
+    if (token && !config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 // Global response interceptor: redirect to login on 401
 api.interceptors.response.use(
   (response) => response,
@@ -15,6 +31,7 @@ api.interceptors.response.use(
     if (typeof window !== 'undefined' && status === 401) {
       const path = window.location.pathname;
       if (path !== '/login' && path !== '/register') {
+        localStorage.removeItem('campusplay_token');
         window.location.href = '/login';
       }
     }

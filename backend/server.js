@@ -34,10 +34,38 @@ const isDevelopment = !isProduction;
 const app = express();
 const httpServer = createServer(app);
 
+// Allowed origins for CORS
+const configuredOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim().replace(/\/$/, ''))
+  : [];
+
+const defaultOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://localhost:5000',
+  'https://campusplay-frontend.vercel.app',
+];
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...configuredOrigins])).filter(Boolean);
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  if (!isProduction) return true;
+  if (origin.endsWith('.vercel.app')) return true;
+  return false;
+};
+
 // Initialize Socket.io
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
   },
 });
@@ -59,21 +87,31 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // CORS
-const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
 app.use(
   cors({
-    origin: corsOrigin,
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true,
   })
 );
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/bookings', bookingRoutes);
 app.use('/api/user', userRoutes);
+app.use('/user', userRoutes);
 app.use('/api/equipment', equipmentRoutes);
+app.use('/equipment', equipmentRoutes);
 app.use('/api/equipment-bookings', equipmentBookingRoutes);
+app.use('/equipment-bookings', equipmentBookingRoutes);
 app.use('/api/facilities', facilityRoutes);
+app.use('/facilities', facilityRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

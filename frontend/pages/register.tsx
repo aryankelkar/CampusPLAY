@@ -44,7 +44,10 @@ export default function Register() {
 
     try {
       setLoading(true);
-      await api.post('/auth/register', { name, email: email.trim(), password, roll, branch, division, classYear });
+      const res = await api.post('/api/auth/register', { name, email: email.trim(), password, roll, branch, division, classYear });
+      if (res?.data?.data?.token) {
+        localStorage.setItem('campusplay_token', res.data.data.token);
+      }
       setSuccess('Account created successfully! Redirecting to login...');
       setTimeout(() => router.push('/login'), 1500);
     } catch (err: any) {

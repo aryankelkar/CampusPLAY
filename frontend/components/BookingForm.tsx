@@ -24,7 +24,7 @@ export default function BookingForm({ onSuccess }: { onSuccess: () => void }) {
     
     const load = async () => {
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get('/api/auth/me');
         if (isMounted) {
           const user = data?.data?.user;
           setMe(user);

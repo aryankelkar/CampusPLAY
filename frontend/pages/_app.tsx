@@ -30,12 +30,26 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   const [routeLoading, setRouteLoading] = useState(false);
 
   useEffect(() => {
+    // Ignore third-party browser extension errors from interrupting Next.js dev overlay
+    const handleExtensionError = (event: ErrorEvent) => {
+      if (
+        event.filename?.includes('chrome-extension://') ||
+        event.filename?.includes('moz-extension://') ||
+        event.message?.includes('M_ID')
+      ) {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+      }
+    };
+    window.addEventListener('error', handleExtensionError, true);
+
     const start = () => setRouteLoading(true);
     const end = () => setRouteLoading(false);
     router.events.on('routeChangeStart', start);
     router.events.on('routeChangeComplete', end);
     router.events.on('routeChangeError', end);
     return () => {
+      window.removeEventListener('error', handleExtensionError, true);
       router.events.off('routeChangeStart', start);
       router.events.off('routeChangeComplete', end);
       router.events.off('routeChangeError', end);

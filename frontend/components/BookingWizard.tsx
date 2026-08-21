@@ -55,9 +55,9 @@ export default function BookingWizard({ onSuccess }: { onSuccess: () => void }) 
     let isMounted = true;
     const load = async () => {
       try {
-        const { data } = await api.get('/auth/me');
+        const { data } = await api.get('/api/auth/me');
         if (isMounted) setMe(data?.data?.user || null);
-        const { data: eqData } = await api.get('/equipment');
+        const { data: eqData } = await api.get('/api/equipment');
         if (isMounted) setEquipmentList(eqData?.data?.equipment || []);
       } catch {
         if (isMounted) router.replace('/login');

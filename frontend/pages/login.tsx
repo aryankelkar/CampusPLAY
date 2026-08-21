@@ -38,7 +38,10 @@ export default function Login() {
 
     try {
       setLoading(true);
-      await api.post('/auth/login', { email: email.trim(), password });
+      const res = await api.post('/api/auth/login', { email: email.trim(), password });
+      if (res?.data?.data?.token) {
+        localStorage.setItem('campusplay_token', res.data.data.token);
+      }
       await refresh();
       window.location.href = '/';
     } catch (err: any) {
