@@ -71,8 +71,8 @@ Your backend is already configured with:
 ```
 PORT=5000
 NODE_ENV=production
-MONGO_URI=mongodb+srv://admin:<db_password>@campusplay-cluster.ukkoffp.mongodb.net/?appName=campusplay-cluster
-JWT_SECRET=your_generated_32_char_secret
+MONGO_URI=mongodb+srv://admin:aryan1847@campusplay-cluster.ukkoffp.mongodb.net/?appName=campusplay-cluster
+JWT_SECRET=dMD72NfVdPV1TSYSbCo2IfOvq452JaFQbyqW0fHtHpU=
 CORS_ORIGIN=https://your-vercel-app.vercel.app
 ADMIN_EMAIL=admin@vit.edu.in
 ADMIN_PASSWORD=admin123
@@ -80,11 +80,11 @@ ADMIN_PASSWORD=admin123
 
 5. Click "Deploy Web Service"
 6. Wait for deployment (2-3 minutes)
-7. Copy your Render URL: `https://your-app.onrender.com`
+7. Copy your Render URL: `https://campusplay-4g0z.onrender.com`
 
 ### Step 3: Test Backend
 ```bash
-curl https://your-app.onrender.com/api/health
+curl https://campusplay-4g0z.onrender.com/api/health
 # Should return: {"status":"ok"}
 ```
 
@@ -113,8 +113,8 @@ Your frontend is already configured with:
 
 **Environment Variables:**
 ```
-NEXT_PUBLIC_API_URL=https://your-app.onrender.com
-NEXT_PUBLIC_SOCKET_URL=https://your-app.onrender.com
+NEXT_PUBLIC_API_URL=https://campusplay-4g0z.onrender.com
+NEXT_PUBLIC_SOCKET_URL=https://campusplay-4g0z.onrender.com
 ```
 
 **⚠️ CRITICAL:** Make sure both variables are set to the same URL (your Render backend URL)
@@ -126,7 +126,7 @@ NEXT_PUBLIC_SOCKET_URL=https://your-app.onrender.com
 ### Step 3: Update CORS on Render
 1. Go back to your Render dashboard
 2. Edit your web service
-3. Update `CORS_ORIGIN` to your Vercel URL
+3. Update `CORS_ORIGIN` to your Vercel URL (e.g., `https://your-app.vercel.app`)
 4. Save and redeploy
 
 ---
@@ -154,10 +154,10 @@ NEXT_PUBLIC_SOCKET_URL=https://your-app.onrender.com
 ### 1. Test Backend
 ```bash
 # Health check
-curl https://your-app.onrender.com/api/health
+curl https://campusplay-4g0z.onrender.com/api/health
 
 # Test registration endpoint
-curl -X POST https://your-app.onrender.com/api/auth/register \
+curl -X POST https://campusplay-4g0z.onrender.com/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@vit.edu.in","password":"test123","roll":"24CS1C0001","name":"Test User"}'
 ```
