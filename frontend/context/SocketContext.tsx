@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { API_ORIGIN } from '../lib/api';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -20,9 +21,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { user } = useAuth();
 
   useEffect(() => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    // The server authenticates the handshake with the JWT cookie, so only
+    // connect once an authenticated user is known.
+    if (!user) {
+      setSocket(null);
+      setConnected(false);
+      return;
+    }
 
-    const newSocket = io(API_URL, {
+    const newSocket = io(API_ORIGIN, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -51,18 +58,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => {
       newSocket.close();
     };
-  }, []);
-
-  useEffect(() => {
-    if (!socket) return;
-    if (user) {
-      if (user.role === 'admin') {
-        socket.emit('join-admin');
-      } else {
-        socket.emit('join-student', user._id);
-      }
-    }
-  }, [socket, user]);
+    // Reconnect whenever the authenticated identity changes: rooms are assigned
+    // server-side from the JWT cookie during the handshake.
+  }, [user?._id, user?.role]);
 
   return (
     <SocketContext.Provider value={{ socket, connected }}>

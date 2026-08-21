@@ -1,33 +1,31 @@
 import { validationResult } from 'express-validator';
 import Booking from '../models/Booking.js';
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
-import { BOOKING_STATUS, MAX_TEAM_MEMBERS, TIME_SLOTS, ERROR_MESSAGES } from '../constants/index.js';
+import { BOOKING_STATUS, MAX_TEAM_MEMBERS, TIME_SLOTS, ERROR_MESSAGES, USER_ROLES } from '../constants/index.js';
 import * as bookingService from '../services/bookingService.js';
 import { emitBookingUpdate } from '../services/socketService.js';
 
-export const getBookings = async (req, res) => {
+export const getBookings = async (req, res, next) => {
   try {
-    const baseFilter = req.user?.role === 'student' ? { student: req.user._id } : {};
+    const baseFilter = req.user?.role === USER_ROLES.STUDENT ? { student: req.user._id } : {};
     const queryFilter = {};
     if (req.query?.ground) queryFilter.ground = req.query.ground;
     if (req.query?.date) queryFilter.date = req.query.date;
     const filter = { ...baseFilter, ...queryFilter };
-    const bookings = await Booking.find(filter)
-      .populate('student', 'name email roll branch division classYear')
-      .sort({ createdAt: -1 });
+    const bookings = await bookingService.getBookingsByFilter(filter);
     return sendSuccess(res, { bookings }, 'Bookings fetched');
   } catch (err) {
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    return next(err);
   }
 };
 
-export const cancelBooking = async (req, res) => {
+export const cancelBooking = async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id).populate('student', 'name email roll');
     if (!booking) return sendError(res, 'Booking not found', 404);
     
     // Only students can cancel their own bookings
-    if (req.user?.role !== 'student') return sendError(res, 'Only students can cancel their bookings', 403);
+    if (req.user?.role !== USER_ROLES.STUDENT) return sendError(res, 'Only students can cancel their bookings', 403);
     if (String(booking.student._id) !== String(req.user._id)) return sendError(res, 'Not authorized to cancel this booking', 403);
     
     // Allow canceling Pending or Approved bookings
@@ -35,36 +33,29 @@ export const cancelBooking = async (req, res) => {
       return sendError(res, 'Only pending or approved bookings can be cancelled', 400);
     }
     
-    // Update booking status
-    booking.status = BOOKING_STATUS.CANCELLED;
-    booking.canceledAt = new Date();
-    booking.canceledBy = req.user.name || req.user.email;
-    await booking.save();
-    
+    const updatedBooking = await bookingService.updateBookingStatus(
+      req.params.id,
+      BOOKING_STATUS.CANCELLED,
+      { canceledBy: req.user._id }
+    );
+
     // Emit real-time update via Socket.io
-    emitBookingUpdate('booking:cancelled', { booking });
-    
-    console.log(`✅ Booking cancelled by student: ${booking._id}`);
-    return sendSuccess(res, { booking }, 'Booking cancelled successfully. Slot is now available again.');
+    emitBookingUpdate('booking:cancelled', { booking: updatedBooking });
+
+    return sendSuccess(res, { booking: updatedBooking }, 'Booking cancelled successfully. Slot is now available again.');
   } catch (err) {
-    console.error('❌ Error cancelling booking:', err);
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    return next(err);
   }
 };
 
-export const createBooking = async (req, res) => {
+export const createBooking = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   try {
-    // Conflict check: prevent duplicate time slot for same date + ground
+    // Single canonical conflict check (Pending/Approved occupy the slot).
     const { ground, date, time } = req.body;
-    const existing = await Booking.findOne({
-      ground,
-      date,
-      time,
-      status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED] }
-    });
+    const existing = await bookingService.checkSlotConflict(ground, date, time);
     if (existing) {
       return sendError(res, ERROR_MESSAGES.SLOT_BOOKED, 409);
     }
@@ -108,35 +99,24 @@ export const createBooking = async (req, res) => {
       classYear: req.user?.classYear,
     };
 
-    // ATOMIC CONFLICT CHECK: Check if slot is already booked (Pending or Approved)
-    const existingBooking = await Booking.findOne({
-      ground: req.body.ground,
-      date: req.body.date,
-      time: req.body.time,
-      status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED] }
-    });
-
-    if (existingBooking) {
-      return sendError(res, '⚠️ This slot was just booked by another student. Please choose another time slot.', 409);
-    }
-
-    // Enforce server-side snapshot fields; do not allow client to override identity fields
+    // Enforce server-side snapshot fields; do not allow client to override identity fields.
+    // The partial unique index is the final guard for concurrent inserts; a
+    // duplicate-key error is translated to a 409 below.
     const booking = await Booking.create({ ...req.body, ...snapshot, teamMembers, student: req.user._id, status: BOOKING_STATUS.PENDING });
-    
+
     // Emit real-time update to all connected clients
     emitBookingUpdate('booking:created', { booking });
-    
+
     return sendSuccess(res, { booking }, 'Booking created', 201);
   } catch (err) {
-    // Handle duplicate key error from MongoDB unique index
     if (err.code === 11000) {
-      return sendError(res, '⚠️ This slot was just booked by another student. Please choose another time slot.', 409);
+      return sendError(res, ERROR_MESSAGES.SLOT_TAKEN_RACE, 409);
     }
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    return next(err);
   }
 };
 
-export const approveBooking = async (req, res) => {
+export const approveBooking = async (req, res, next) => {
   try {
     const booking = await bookingService.findBookingById(req.params.id);
     if (!booking) return sendError(res, 'Booking not found', 404);
@@ -165,11 +145,14 @@ export const approveBooking = async (req, res) => {
     
     return sendSuccess(res, { booking: updatedBooking }, 'Booking approved');
   } catch (err) {
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    if (err.code === 11000) {
+      return sendError(res, ERROR_MESSAGES.SLOT_TAKEN_RACE, 409);
+    }
+    return next(err);
   }
 };
 
-export const rejectBooking = async (req, res) => {
+export const rejectBooking = async (req, res, next) => {
   try {
     const booking = await bookingService.findBookingById(req.params.id);
     if (!booking) return sendError(res, 'Booking not found', 404);
@@ -191,17 +174,29 @@ export const rejectBooking = async (req, res) => {
     
     return sendSuccess(res, { booking: updatedBooking }, 'Booking rejected');
   } catch (err) {
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    return next(err);
   }
 };
 
-export const setPending = async (req, res) => {
+export const setPending = async (req, res, next) => {
   try {
     const booking = await bookingService.findBookingById(req.params.id);
     if (!booking) return sendError(res, 'Booking not found', 404);
     
     const previousStatus = booking.status;
-    
+
+    // Restoring a booking to Pending re-occupies the slot, so it must not
+    // collide with another active booking.
+    const conflict = await bookingService.checkSlotConflict(
+      booking.ground,
+      booking.date,
+      booking.time,
+      booking._id
+    );
+    if (conflict) {
+      return sendError(res, 'Another active booking already occupies this slot.', 409);
+    }
+
     // Update booking status to pending
     const updatedBooking = await bookingService.updateBookingStatus(
       req.params.id,
@@ -220,32 +215,23 @@ export const setPending = async (req, res) => {
     
     return sendSuccess(res, { booking: updatedBooking }, message);
   } catch (err) {
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    if (err.code === 11000) {
+      return sendError(res, ERROR_MESSAGES.SLOT_TAKEN_RACE, 409);
+    }
+    return next(err);
   }
 };
 
-export const availability = async (req, res) => {
+export const availability = async (req, res, next) => {
   try {
     const { date, ground } = req.query;
     if (!date || !ground) return sendError(res, 'date and ground are required', 400);
-    // Only show Approved bookings as 'Booked'. Pending bookings don't block slots.
-    const bookings = await Booking.find({ date, ground, status: { $in: [BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED] } });
-    const bookedTimes = bookings.map((b) => b.time);
-
-    const allSlots = TIME_SLOTS;
-
-    const slots = allSlots.map((slot) => {
-      const match = bookings.find((b) => b.time === slot);
-      return {
-        slot,
-        status: match ? 'Booked' : 'Vacant',
-        bookedBy: match ? (match.name || (match.student && match.student.name) || null) : null,
-        game: match ? match.game : null,
-      };
-    });
+    // Active bookings (Pending or Approved) occupy a slot; Rejected and
+    // Cancelled bookings free it again.
+    const { slots, bookedTimes } = await bookingService.getAvailableSlots(date, ground, TIME_SLOTS);
 
     return res.status(200).json({ success: true, message: 'Availability', data: { slots, bookedTimes }, bookedTimes });
   } catch (err) {
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    return next(err);
   }
 };

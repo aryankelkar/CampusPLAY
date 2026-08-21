@@ -14,7 +14,9 @@ export const USER_ROLES = {
 
 // Email Domains
 export const ALLOWED_EMAIL_DOMAINS = ['@vit.edu.in'];
-export const ADMIN_EMAIL = 'admin@campusplay.com';
+// Identity of the provisioned administrator. Used to let the seeded admin log
+// in with a non-college domain - never to grant admin rights on registration.
+export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@campusplay.com';
 
 // Booking Constraints
 export const MAX_TEAM_MEMBERS = 10;
@@ -51,5 +53,9 @@ export const ERROR_MESSAGES = {
   BOOKING_NOT_FOUND: 'Booking not found',
   NOT_AUTHORIZED: 'Not authorized',
   SLOT_BOOKED: '❌ This slot is already booked. Please choose another time.',
+  SLOT_TAKEN_RACE: '⚠️ This slot was just booked by another student. Please choose another time slot.',
   SERVER_ERROR: 'Server error',
 };
+
+// Statuses that occupy a slot. Rejected/Cancelled bookings free the slot.
+export const ACTIVE_BOOKING_STATUSES = [BOOKING_STATUS.PENDING, BOOKING_STATUS.APPROVED];

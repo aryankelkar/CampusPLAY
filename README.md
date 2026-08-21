@@ -4,7 +4,7 @@
 
 A full-stack web application to simplify sports ground management with booking requests, admin approvals, and real-time availability tracking.
 
-> ✨ **Production Ready**: Fully optimized with Socket.io real-time updates, service layer architecture, and comprehensive deployment guides. See [OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md) for complete details.
+> Status: **Ready for student/demo deployment.** Automated coverage exists for authentication, authorization, booking conflicts and Socket.io auth, but the app has not been load-tested or security-reviewed by a third party. See [Known limitations](#-known-limitations).
 
 ## 🚀 Tech Stack
 - **Frontend**: Next.js 14 (TypeScript) + Tailwind CSS + Socket.io-client
@@ -24,12 +24,14 @@ A full-stack web application to simplify sports ground management with booking r
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env as needed
+# Set MONGO_URI and a strong JWT_SECRET (openssl rand -base64 48)
 npm install
-npm run seed   # creates admin@campusplay.com / admin123
+npm run seed   # provisions the admin from ADMIN_EMAIL / ADMIN_PASSWORD
 npm run dev
 ```
 Backend runs on http://localhost:5000
+
+Run the backend test suite with `npm test` (uses an in-memory MongoDB, no external services needed).
 
 ### 2) Frontend
 ```bash
@@ -39,7 +41,7 @@ npm run dev
 ```
 Frontend runs on http://localhost:3000
 
-If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.local` file in `frontend/`.
+If your backend runs on a different URL, set `NEXT_PUBLIC_API_URL` in `frontend/.env.local`. It is the backend **origin** only: REST calls derive `${NEXT_PUBLIC_API_URL}/api` and Socket.io connects to the origin itself, so never append `/api`.
 
 ## ✨ Features
 
@@ -77,7 +79,7 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 - `PATCH /api/bookings/:id/approve` - Approve booking (admin)
 - `PATCH /api/bookings/:id/reject` - Reject booking (admin)
 - `PATCH /api/bookings/:id/pending` - Move to pending (admin)
-- `PATCH /api/bookings/:id/cancel` - Cancel booking (student)
+- `PATCH /api/bookings/:id/cancel` (or `POST .../cancel`) - Cancel booking (student, status transition only; history is kept)
 - `GET /api/bookings/availability` - Check slot availability
 
 ### User
@@ -121,29 +123,62 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 
 ### Deployment & Optimization
 - **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Complete deployment instructions for Render/Railway
-- **[OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)** - Full optimization and refactoring details
-- **[OPTIMIZATION_REPORT.md](./OPTIMIZATION_REPORT.md)** - Previous optimization documentation
-- **[IMPROVEMENTS_SUMMARY.md](./IMPROVEMENTS_SUMMARY.md)** - Quick reference guide
+- **[docs/archive/](./docs/archive)** - Historical fix/optimization notes kept for reference
 
 ### Theme & Design System 🎨
 - **[THEME_GUIDE.md](./THEME_GUIDE.md)** - Complete Sport & Nature Harmony theme guide
-- **[THEME_IMPLEMENTATION.md](./THEME_IMPLEMENTATION.md)** - Implementation summary & technical details
-- **[THEME_QUICK_REFERENCE.md](./THEME_QUICK_REFERENCE.md)** - Quick reference cheat sheet
-- **[COLOR_CONTRAST_FIX.md](./COLOR_CONTRAST_FIX.md)** - Accessibility & visibility fixes
-- **[NAVBAR_CONSISTENCY_FIX.md](./NAVBAR_CONSISTENCY_FIX.md)** - Navbar layout & consistency fixes
-- **[IMAGE_GUIDE.md](./IMAGE_GUIDE.md)** - AI image prompts & visual assets guide
-- **[VISUAL_PAGES_SUMMARY.md](./VISUAL_PAGES_SUMMARY.md)** - Enhanced pages overview
 - **Theme Constants**: `frontend/constants/theme.ts`
 - **Component Examples**: `frontend/components/ThemeExamples.tsx`
 
-## 🎓 Default Credentials
-**Admin Account** (created via seed script):
-- Email: `admin@campusplay.com`
-- Password: `admin123`
+## 🔐 Admin provisioning
 
-**Student Registration**:
-- Must use `@vit.edu.in` email domain
-- Roll format: `24XX1C00XX` (e.g., 24CS1C0001)
+Admins are **never** created by public registration — registering always yields `role = student`,
+whatever email is used. The single admin account is provisioned out-of-band:
+
+```bash
+cd backend
+# set ADMIN_EMAIL and ADMIN_PASSWORD in .env first (ADMIN_PASSWORD is mandatory when NODE_ENV=production)
+npm run seed
+```
+
+In development, if `ADMIN_PASSWORD` is unset the seed script generates a random development-only
+password and prints it once. No credential is hard-coded in the repository.
+
+**Student registration**: must use an `@vit.edu.in` email; password needs 8+ characters with an
+uppercase letter, a lowercase letter and a digit.
+
+## 🛡️ Security notes
+
+- JWT is stored in an HttpOnly cookie; `secure` + `SameSite=None` in production.
+- Socket.io handshakes are authenticated from that same cookie. The server derives the user and
+  role from the verified JWT and joins `admin-room` or `student-{id}` itself — clients cannot pick
+  a room, impersonate another student, or claim to be an admin.
+- `POST /api/auth/login` and `/register` are rate limited (`AUTH_RATE_LIMIT_MAX`, default 10 per
+  15 minutes per IP). Behind a proxy set `TRUST_PROXY=1` so the real client IP is used.
+- Authorization is enforced entirely in the backend; frontend role checks only hide UI.
+- Errors go through a central handler: validation, duplicate-key and auth errors get proper status
+  codes, and stack traces/Mongo internals are never returned in production.
+
+## 🗓️ Booking rules
+
+A booking is **active** (occupies its slot) when its status is `Pending` or `Approved`.
+`Rejected` and `Cancelled` bookings free the slot again. The same rule drives creation, approval,
+revocation and the availability endpoint, and it is backed by a partial unique index
+(`unique_active_slot` on `{ground, date, time}` filtered to active statuses) so two concurrent
+requests for one slot can never both succeed — the loser gets HTTP 409.
+
+> Upgrading an existing database: an older index named `unique_active_booking_per_slot` included
+> `status` in the key, which allowed a Pending and an Approved booking on the same slot. Drop it
+> once (`db.bookings.dropIndex('unique_active_booking_per_slot')`); Mongoose creates the corrected
+> index automatically.
+
+## ⚠️ Known limitations
+
+- No email verification or password reset flow.
+- Rate limiting is in-memory, so it resets on restart and is per-instance.
+- No end-to-end/browser tests; frontend logic is covered only indirectly.
+- Historical, point-in-time design/fix notes live in [`docs/archive/`](./docs/archive) and may be
+  out of date.
 
 ## 🚀 Production Deployment
 
@@ -156,9 +191,11 @@ If your backend runs on a different URL, set `NEXT_PUBLIC_API_BASE` in a `.env.l
 PORT=5000
 NODE_ENV=production
 MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/campusplay
-JWT_SECRET=your_super_secret_jwt_key_minimum_32_characters
+JWT_SECRET=<openssl rand -base64 48>
 CORS_ORIGIN=https://your-frontend-url.com
+TRUST_PROXY=1
 ADMIN_EMAIL=admin@vit.edu.in
+ADMIN_PASSWORD=<strong password, used by the seed script only>
 ```
 
 **Frontend** (`.env.local`):
@@ -196,7 +233,7 @@ Contributions are welcome! Please ensure:
 - Code follows existing patterns
 - Use shared constants from `constants/` folders
 - Add TypeScript types where applicable
-- Test thoroughly before submitting
+- `cd backend && npm test` and `cd frontend && npm run lint && npm run build` pass (CI enforces both)
 
 ## 📄 License
 MIT License - Feel free to use for educational purposes

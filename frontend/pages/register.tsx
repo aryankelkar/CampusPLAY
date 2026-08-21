@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import api from '../lib/api';
-import { ADMIN_EMAIL, ALLOWED_EMAIL_DOMAIN, BRANCHES, DIVISIONS, CLASS_YEARS } from '../constants';
+import { ALLOWED_EMAIL_DOMAIN, BRANCHES, DIVISIONS, CLASS_YEARS } from '../constants';
 import { isValidCollegeEmail, isValidRollNumber } from '../utils/helpers';
 
 export default function Register() {
@@ -19,9 +19,9 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const isAdminEmail = email.trim().toLowerCase() === ADMIN_EMAIL;
-  const isCollegeEmail = isValidCollegeEmail(email.trim().toLowerCase());
-  const rollValid = isAdminEmail ? true : isValidRollNumber(roll.trim().toUpperCase());
+  // Registration always creates a student account; admins are provisioned server-side.
+  const isCollegeEmail = isValidCollegeEmail(email.trim().toLowerCase(), false);
+  const rollValid = isValidRollNumber(roll.trim().toUpperCase());
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,10 +30,8 @@ export default function Register() {
       setError(`Only official college emails ending with ${ALLOWED_EMAIL_DOMAIN} are allowed.`);
       return;
     }
-    if (!isAdminEmail) {
-      if (!rollValid) { setError('Invalid roll number. Must be alphanumeric (1-10 characters)'); return; }
-      if (!branch || !division || !classYear) { setError('Branch, Division, and Class Year are required.'); return; }
-    }
+    if (!rollValid) { setError('Invalid roll number. Must be alphanumeric (1-10 characters)'); return; }
+    if (!branch || !division || !classYear) { setError('Branch, Division, and Class Year are required.'); return; }
     // Password validation
     if (password.length < 8) { setError('Password must be at least 8 characters long'); return; }
     if (!/[A-Z]/.test(password)) { setError('Password must contain at least one uppercase letter'); return; }
@@ -117,11 +115,10 @@ export default function Register() {
                 placeholder="e.g., 2024CS001 or ABC123" 
                 value={roll} 
                 onChange={(e) => setRoll(e.target.value.toUpperCase())} 
-                required={!isAdminEmail} 
-                disabled={isAdminEmail} 
+                required 
                 maxLength={10} 
               />
-              {!rollValid && !isAdminEmail && roll && (
+              {!rollValid && roll && (
                 <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
                   <span>⚠️</span>
                   <span>Alphanumeric only, max 10 characters</span>
@@ -158,8 +155,7 @@ export default function Register() {
                 className="input" 
                 value={branch} 
                 onChange={(e) => setBranch(e.target.value)} 
-                required={!isAdminEmail} 
-                disabled={isAdminEmail}
+                required
               >
                 <option value="">Select Branch</option>
                 {BRANCHES.map(b => <option key={b} value={b}>{b}</option>)}
@@ -172,8 +168,7 @@ export default function Register() {
                 className="input" 
                 value={division} 
                 onChange={(e) => setDivision(e.target.value)} 
-                required={!isAdminEmail} 
-                disabled={isAdminEmail}
+                required
               >
                 <option value="">Select Division</option>
                 {DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
@@ -186,8 +181,7 @@ export default function Register() {
                 className="input" 
                 value={classYear} 
                 onChange={(e) => setClassYear(e.target.value)} 
-                required={!isAdminEmail} 
-                disabled={isAdminEmail}
+                required
               >
                 <option value="">Select Year</option>
                 {CLASS_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
@@ -207,7 +201,7 @@ export default function Register() {
           aria-label="Submit registration" 
           className="btn btn-secondary w-full py-3" 
           type="submit" 
-          disabled={loading || !name || !isCollegeEmail || (!isAdminEmail && (!rollValid || !branch || !division || !classYear)) || password.length < 8}
+          disabled={loading || !name || !isCollegeEmail || !rollValid || !branch || !division || !classYear || password.length < 8}
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

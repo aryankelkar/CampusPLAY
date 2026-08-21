@@ -28,8 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await api.post('/auth/logout');
-    setUser(null);
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      // Client state is cleared even if the request fails, so an expired
+      // session can never leave the UI in a logged-in state.
+      setUser(null);
+    }
   };
 
   useEffect(() => { refresh(); }, []);

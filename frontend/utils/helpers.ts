@@ -1,4 +1,4 @@
-import { BOOKING_STATUS, STATUS_COLORS, STATUS_ICONS, BookingStatus } from '../constants';
+import { ADMIN_EMAIL, ALLOWED_EMAIL_DOMAIN, BOOKING_STATUS, STATUS_COLORS, STATUS_ICONS, BookingStatus } from '../constants';
 
 /**
  * Get status badge classes
@@ -61,8 +61,8 @@ export function isToday(date: string): boolean {
  * Validate email domain
  */
 export function isValidCollegeEmail(email: string, allowAdmin = true): boolean {
-  if (allowAdmin && email === 'admin@campusplay.com') return true;
-  return email.endsWith('@vit.edu.in');
+  if (allowAdmin && email.toLowerCase() === ADMIN_EMAIL) return true;
+  return email.endsWith(ALLOWED_EMAIL_DOMAIN);
 }
 
 /**

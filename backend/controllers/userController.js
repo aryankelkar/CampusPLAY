@@ -1,19 +1,18 @@
 import User from '../models/User.js';
 import { sendSuccess, sendError } from '../utils/responseHandler.js';
-import { ERROR_MESSAGES } from '../constants/index.js';
 import { validatePassword } from '../utils/passwordValidator.js';
 
-export const getProfile = async (req, res) => {
+export const getProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
     if (!user) return sendError(res, 'User not found', 404);
     return sendSuccess(res, { user }, 'Profile');
   } catch (err) {
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    return next(err);
   }
 };
 
-export const updateProfile = async (req, res) => {
+export const updateProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) return sendError(res, 'User not found', 404);
@@ -29,11 +28,11 @@ export const updateProfile = async (req, res) => {
     delete safe.password;
     return sendSuccess(res, { user: safe }, 'Profile updated');
   } catch (err) {
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    return next(err);
   }
 };
 
-export const changePassword = async (req, res) => {
+export const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body || {};
     if (!currentPassword || !newPassword) return sendError(res, 'Current and new password are required', 400);
@@ -54,6 +53,6 @@ export const changePassword = async (req, res) => {
     await user.save();
     return sendSuccess(res, null, 'Password updated');
   } catch (err) {
-    return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
+    return next(err);
   }
 };

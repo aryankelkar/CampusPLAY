@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { isValidCollegeEmail } from '../utils/helpers';
 
 export default function Login() {
   const router = useRouter();
@@ -26,11 +27,7 @@ export default function Login() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const isValidEmail = (email: string) => {
-      const collegeDomain = '@vit.edu.in';
-      return email.endsWith(collegeDomain) || email === 'admin@campusplay.com';
-    };
-    if (!isValidEmail(email)) {
+    if (!isValidCollegeEmail(email.trim().toLowerCase())) {
       setError('❌ Please use your official college email (@vit.edu.in) to log in.');
       return;
     }
@@ -117,10 +114,6 @@ export default function Login() {
             <p className="text-center text-xs text-muted flex items-center justify-center gap-1">
               <span>💡</span>
               <span>Only VIT emails allowed (e.g., yourname@vit.edu.in)</span>
-            </p>
-            <p className="text-center text-xs text-muted flex items-center justify-center gap-1">
-              <span>🔑</span>
-              <span>Admin login: admin@campusplay.com / admin123</span>
             </p>
           </div>
         </form>

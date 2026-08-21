@@ -16,7 +16,8 @@ export const USER_ROLES = {
 
 // Email Validation
 export const ALLOWED_EMAIL_DOMAIN = '@vit.edu.in';
-export const ADMIN_EMAIL = 'admin@campusplay.com';
+// UI-only hint for the provisioned admin account; authorization is enforced by the backend.
+export const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'admin@campusplay.com').toLowerCase();
 
 // Academic Constants
 export const BRANCHES = ['INFT', 'CMPN', 'EXTC', 'EXCS', 'BIOMED'] as const;
