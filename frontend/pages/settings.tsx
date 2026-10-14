@@ -5,6 +5,14 @@ import { FormSkeleton } from '../components/common/LoadingSkeleton';
 import api from '../lib/api';
 import { BRANCHES, DIVISIONS, CLASS_YEARS } from '../constants';
 import { useSocket } from '../context/SocketContext';
+import { useAuth } from '../context/AuthContext';
+
+const SEMESTERS_BY_YEAR: Record<string, number[]> = {
+  FE: [1, 2],
+  SE: [3, 4],
+  TE: [5, 6],
+  BE: [7, 8],
+};
 
 function validatePhone(phone: string) {
   return /^[6-9]\d{9}$/.test(phone.trim());
@@ -53,6 +61,7 @@ export default function SettingsPage() {
 
 function Settings() {
   const { socket } = useSocket();
+  const { refresh } = useAuth();
   const [tab, setTab] = useState<Tab>('profile');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -64,6 +73,7 @@ function Settings() {
   const [branch, setBranch] = useState('');
   const [division, setDivision] = useState('');
   const [classYear, setClassYear] = useState('');
+  const [semester, setSemester] = useState<string | number>('');
   const [phone, setPhone] = useState('');
   const [bio, setBio] = useState('');
   const [bookingStats, setBookingStats] = useState<any>(null);
@@ -89,6 +99,7 @@ function Settings() {
         setBranch(u?.branch || '');
         setDivision(u?.division || '');
         setClassYear(u?.classYear || '');
+        setSemester(u?.semester !== undefined && u?.semester !== null ? u.semester : '');
         setPhone(u?.phone || '');
         setBio(u?.bio || '');
         if ((!u?.branch || !u?.division || !u?.classYear) && u?.role === 'student') {
@@ -100,6 +111,9 @@ function Settings() {
               setBranch((prev) => prev || latest?.branch || latest?.student?.branch || '');
               setDivision((prev) => prev || latest?.division || latest?.student?.division || '');
               setClassYear((prev) => prev || latest?.classYear || latest?.student?.classYear || '');
+              if (latest?.semester || latest?.student?.semester) {
+                setSemester((prev) => prev || latest?.semester || latest?.student?.semester || '');
+              }
             }
           } catch {}
         }
@@ -169,10 +183,11 @@ function Settings() {
       branch !== me.branch ||
       division !== me.division ||
       classYear !== me.classYear ||
+      String(semester) !== (me.semester !== undefined && me.semester !== null ? String(me.semester) : '') ||
       phone !== (me.phone || '') ||
       bio !== (me.bio || '')
     );
-  }, [me, name, branch, division, classYear, phone, bio]);
+  }, [me, name, branch, division, classYear, semester, phone, bio]);
 
   const handleTabChange = (next: Tab) => {
     if (tab === 'profile' && changed) {
@@ -202,11 +217,36 @@ function Settings() {
     }
     try {
       setSaving(true);
-      await api.put('/user/update', { name, phone, bio, branch, division, classYear });
+      const { data: updateRes } = await api.put('/user/update', { 
+        name, 
+        phone, 
+        bio, 
+        branch, 
+        division, 
+        classYear,
+        semester: semester !== '' ? Number(semester) : null 
+      });
       setToast({message: 'Profile updated successfully!', type: 'success'});
       setTimeout(()=> setToast(null), 2000);
-      const { data } = await api.get('/user/profile');
-      const u = data?.data?.user; setMe(u);
+      const updatedUser = updateRes?.data?.user;
+      if (updatedUser) {
+        setMe(updatedUser);
+        setName(updatedUser.name || '');
+        setBranch(updatedUser.branch || '');
+        setDivision(updatedUser.division || '');
+        setClassYear(updatedUser.classYear || '');
+        setSemester(updatedUser.semester !== undefined && updatedUser.semester !== null ? updatedUser.semester : '');
+        setPhone(updatedUser.phone || '');
+        setBio(updatedUser.bio || '');
+      } else {
+        const { data } = await api.get('/user/profile');
+        const u = data?.data?.user; 
+        setMe(u);
+      }
+      await refresh();
+    } catch (err: any) {
+      setToast({ message: err?.response?.data?.message || 'Failed to update profile', type: 'error' });
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setSaving(false);
     }
@@ -377,7 +417,7 @@ function Settings() {
 
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-primary mb-4">Academic Details</h3>
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-4">
                   <div>
                     <label className="label mb-2 block">Branch</label>
                     <select className="input" value={branch} onChange={(e)=>setBranch(e.target.value)}>
@@ -394,9 +434,25 @@ function Settings() {
                   </div>
                   <div>
                     <label className="label mb-2 block">Class Year</label>
-                    <select className="input" value={classYear} onChange={(e)=>setClassYear(e.target.value)}>
+                    <select className="input" value={classYear} onChange={(e)=>{
+                      const newYear = e.target.value;
+                      setClassYear(newYear);
+                      const allowed = SEMESTERS_BY_YEAR[newYear] || [];
+                      if (semester && !allowed.includes(Number(semester))) {
+                        setSemester('');
+                      }
+                    }}>
                       <option value="">Select Year</option>
                       {CLASS_YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label mb-2 block">Semester</label>
+                    <select className="input" value={semester} onChange={(e)=>setSemester(e.target.value)}>
+                      <option value="">Not provided</option>
+                      {(SEMESTERS_BY_YEAR[classYear] || [1, 2, 3, 4, 5, 6, 7, 8]).map(s => (
+                        <option key={s} value={s}>Semester {s}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -404,7 +460,15 @@ function Settings() {
                   <button className="btn btn-primary" disabled={!changed || saving || (!!phone && !validatePhone(phone))} onClick={saveProfile}>
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
-                  <button className="btn btn-outline" disabled={!changed || saving} onClick={()=>{ setName(me?.name||''); setBranch(me?.branch||''); setDivision(me?.division||''); setClassYear(me?.classYear||''); setPhone(me?.phone||''); setBio(me?.bio||''); }}>Cancel</button>
+                  <button className="btn btn-outline" disabled={!changed || saving} onClick={()=>{ 
+                    setName(me?.name||''); 
+                    setBranch(me?.branch||''); 
+                    setDivision(me?.division||''); 
+                    setClassYear(me?.classYear||''); 
+                    setSemester(me?.semester !== undefined && me?.semester !== null ? me.semester : '');
+                    setPhone(me?.phone||''); 
+                    setBio(me?.bio||''); 
+                  }}>Cancel</button>
                 </div>
               </div>
             </div>

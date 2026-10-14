@@ -41,6 +41,17 @@ export const isTimeOverlapping = (startA, endA, startB, endB) => {
   return minStartA < minEndB && minEndA > minStartB;
 };
 
+import EquipmentInventoryTransaction from '../models/EquipmentInventoryTransaction.js';
+
+export const ACTIVE_ALLOCATION_STATUSES = [
+  'Approved',
+  'Ready for Collection',
+  'Issued',
+  'Return Requested',
+  'Overdue',
+  'Return Issue',
+];
+
 // Calculate available quantity for an equipment item for a specific date & time interval
 export const calculateAvailableQuantity = async (equipmentId, date, collectionTime, returnTime, excludeBookingId = null) => {
   const item = await Equipment.findById(equipmentId);
@@ -48,24 +59,77 @@ export const calculateAvailableQuantity = async (equipmentId, date, collectionTi
 
   if (item.status === 'Maintenance') return 0;
 
-  // Only APPROVED bookings reduce inventory!
+  const totalStock = Number(item.totalQuantity) || 0;
+  const damagedStock = Number(item.damagedQuantity) || 0;
+  const missingStock = Number(item.missingQuantity) || 0;
+  const usableBase = Math.max(0, totalStock - damagedStock - missingStock);
+
+  // Active bookings consuming inventory: Approved, Ready for Collection, Issued, Return Requested, Overdue, Return Issue (unconfirmed)
   const query = {
     equipment: equipmentId,
-    status: 'Approved',
+    status: { $in: ACTIVE_ALLOCATION_STATUSES },
+    returnConfirmedAt: { $in: [null, undefined] },
   };
-  if (date) query.date = date;
   if (excludeBookingId) query._id = { $ne: excludeBookingId };
 
-  const approvedBookings = await EquipmentBooking.find(query);
+  const activeBookings = await EquipmentBooking.find(query);
 
   let occupiedQuantity = 0;
-  for (const b of approvedBookings) {
-    if (!date || !collectionTime || !returnTime || isTimeOverlapping(b.collectionTime, b.returnTime, collectionTime, returnTime)) {
+  for (const b of activeBookings) {
+    const isPhysicallyIssued = ['Issued', 'Return Requested', 'Overdue', 'Return Issue'].includes(b.status);
+
+    if (!date || !collectionTime || !returnTime) {
+      // General inventory balance: all active unreturned allocations consume inventory
+      occupiedQuantity += b.quantity;
+    } else if (isPhysicallyIssued) {
+      // Equipment already issued out to a student is physically unavailable
+      occupiedQuantity += b.quantity;
+    } else if (b.date === date && isTimeOverlapping(b.collectionTime, b.returnTime, collectionTime, returnTime)) {
+      // Future/same-day reservation overlapping the requested time window
       occupiedQuantity += b.quantity;
     }
   }
 
-  return Math.max(0, item.totalQuantity - occupiedQuantity);
+  return Math.max(0, usableBase - occupiedQuantity);
+};
+
+// Record an immutable equipment inventory transaction audit record
+export const recordInventoryTransaction = async ({
+  equipmentId,
+  equipmentBookingId = null,
+  transactionType,
+  quantity,
+  usableQuantityReturned = 0,
+  damagedQuantity = 0,
+  missingQuantity = 0,
+  previousAvailable = null,
+  resultingAvailable = null,
+  performedBy = 'system',
+  performedByRole = 'admin',
+  notes = '',
+  returnCondition = '',
+}) => {
+  try {
+    const tx = await EquipmentInventoryTransaction.create({
+      equipment: equipmentId,
+      equipmentBooking: equipmentBookingId,
+      transactionType,
+      quantity,
+      usableQuantityReturned,
+      damagedQuantity,
+      missingQuantity,
+      previousAvailable,
+      resultingAvailable,
+      performedBy,
+      performedByRole,
+      notes,
+      returnCondition,
+    });
+    return tx;
+  } catch (err) {
+    console.error('Error logging inventory transaction:', err);
+    return null;
+  }
 };
 
 // Seed default equipment items if database table is empty

@@ -13,6 +13,7 @@ import userRoutes from './routes/userRoutes.js';
 import equipmentRoutes from './routes/equipmentRoutes.js';
 import equipmentBookingRoutes from './routes/equipmentBookingRoutes.js';
 import facilityRoutes from './routes/facilityRoutes.js';
+import timetableRoutes from './routes/timetableRoutes.js';
 import { seedDefaultFacilities } from './services/facilityService.js';
 import { initializeSocket } from './services/socketService.js';
 
@@ -78,12 +79,16 @@ connectDB().then(() => {
 });
 
 // Middlewares
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  contentSecurityPolicy: false,
+  frameguard: false,
+}));
 if (!isProduction) {
   app.use(morgan('dev'));
 }
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(cookieParser());
 
 // CORS
@@ -112,6 +117,8 @@ app.use('/api/equipment-bookings', equipmentBookingRoutes);
 app.use('/equipment-bookings', equipmentBookingRoutes);
 app.use('/api/facilities', facilityRoutes);
 app.use('/facilities', facilityRoutes);
+app.use('/api/timetables', timetableRoutes);
+app.use('/timetables', timetableRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

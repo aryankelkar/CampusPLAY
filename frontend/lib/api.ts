@@ -23,12 +23,15 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Global response interceptor: redirect to login on 401
+// Global response interceptor: redirect to login on 401 (excluding session-check and logout)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
-    if (typeof window !== 'undefined' && status === 401) {
+    const url = String(error?.config?.url || '');
+    const isAuthEndpoint = url.includes('/auth/me') || url.includes('/auth/logout');
+
+    if (typeof window !== 'undefined' && status === 401 && !isAuthEndpoint) {
       const path = window.location.pathname;
       if (path !== '/login' && path !== '/register') {
         localStorage.removeItem('campusplay_token');

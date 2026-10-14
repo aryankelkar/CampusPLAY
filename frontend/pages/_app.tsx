@@ -31,17 +31,34 @@ export default function MyApp({ Component, pageProps }: AppProps) {
 
   useEffect(() => {
     // Ignore third-party browser extension errors from interrupting Next.js dev overlay
+    const isExtensionError = (msg?: string, source?: string, stack?: string) => {
+      const combined = `${msg || ''} ${source || ''} ${stack || ''}`.toLowerCase();
+      return (
+        combined.includes('chrome-extension://') ||
+        combined.includes('moz-extension://') ||
+        combined.includes('safari-extension://') ||
+        combined.includes('m_id') ||
+        combined.includes('eppiocemhmnlbhjplcgkofciiegomcon')
+      );
+    };
+
     const handleExtensionError = (event: ErrorEvent) => {
-      if (
-        event.filename?.includes('chrome-extension://') ||
-        event.filename?.includes('moz-extension://') ||
-        event.message?.includes('M_ID')
-      ) {
+      if (isExtensionError(event.message, event.filename, event.error?.stack)) {
         event.stopImmediatePropagation();
         event.preventDefault();
       }
     };
+
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      if (isExtensionError(reason?.message, '', reason?.stack)) {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+      }
+    };
+
     window.addEventListener('error', handleExtensionError, true);
+    window.addEventListener('unhandledrejection', handleRejection, true);
 
     const start = () => setRouteLoading(true);
     const end = () => setRouteLoading(false);
@@ -50,6 +67,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
     router.events.on('routeChangeError', end);
     return () => {
       window.removeEventListener('error', handleExtensionError, true);
+      window.removeEventListener('unhandledrejection', handleRejection, true);
       router.events.off('routeChangeStart', start);
       router.events.off('routeChangeComplete', end);
       router.events.off('routeChangeError', end);

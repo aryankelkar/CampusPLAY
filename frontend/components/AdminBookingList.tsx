@@ -5,6 +5,7 @@ import ConfirmModal from './common/ConfirmModal';
 import Loader from './common/Loader';
 import EmptyState from './common/EmptyState';
 import StatusTag from './common/StatusTag';
+import AcademicVerificationPanel from './timetable/AcademicVerificationPanel';
 import { getDisplayTime } from '../utils/helpers';
 import { 
   ChevronDown, 
@@ -213,28 +214,8 @@ export default function AdminBookingList({
 
                     {isExpanded && (
                       <div className="mt-4 pt-4 border-t border-[#E8EEF5] space-y-4 animate-in fade-in duration-200 text-xs">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="bg-[#F8FAFC] p-4 rounded-[14px] border border-[#E2E8F0] space-y-2">
-                            <h4 className="font-extrabold text-[#2563EB] text-[11px] uppercase tracking-wider border-b border-[#E2E8F0] pb-1 flex items-center gap-1">
-                              <ShieldCheck size={13} />
-                              <span>Student Profile</span>
-                            </h4>
-                            <div className="flex justify-between"><span className="text-[#52657A]">Name:</span> <strong className="text-[#0F172A] font-bold">{r.name || r.student?.name || '-'}</strong></div>
-                            <div className="flex justify-between"><span className="text-[#52657A]">Roll No:</span> <strong className="text-[#0F172A] font-bold">{r.roll || r.student?.roll || '-'}</strong></div>
-                            <div className="flex justify-between"><span className="text-[#52657A]">Email:</span> <strong className="text-[#0F172A] font-bold truncate max-w-[180px]">{r.email || r.student?.email || '-'}</strong></div>
-                          </div>
-
-                          <div className="bg-[#F8FAFC] p-4 rounded-[14px] border border-[#E2E8F0] space-y-2">
-                            <h4 className="font-extrabold text-[#2563EB] text-[11px] uppercase tracking-wider border-b border-[#E2E8F0] pb-1 flex items-center gap-1">
-                              <Trophy size={13} />
-                              <span>Booking Specification</span>
-                            </h4>
-                            <div className="flex justify-between"><span className="text-[#52657A]">Sport:</span> <strong className="text-[#0F172A] font-bold">{r.game}</strong></div>
-                            <div className="flex justify-between"><span className="text-[#52657A]">Ground:</span> <strong className="text-[#0F172A] font-bold">{r.ground}</strong></div>
-                            <div className="flex justify-between"><span className="text-[#52657A]">Date:</span> <strong className="text-[#0F172A] font-bold">{r.date}</strong></div>
-                            <div className="flex justify-between"><span className="text-[#52657A]">Time:</span> <strong className="text-[#2563EB] font-bold">{getDisplayTime(r)}</strong></div>
-                          </div>
-                        </div>
+                        {/* Academic Profile, Timetable Conflict Verification, and Squad Members Panel */}
+                        <AcademicVerificationPanel booking={r} />
 
                         {showActions !== 'none' && (
                           <div className="flex flex-wrap gap-2 pt-2 border-t border-[#E8EEF5]">

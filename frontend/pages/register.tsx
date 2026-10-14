@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Image from 'next/image';
-import { User, Mail, Hash, Lock, ShieldCheck, ArrowRight, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Hash, Lock, ShieldCheck, ArrowRight, AlertCircle, CheckCircle2, Eye, EyeOff, Phone } from 'lucide-react';
 import api from '../lib/api';
 import { ADMIN_EMAIL, ALLOWED_EMAIL_DOMAIN, BRANCHES, DIVISIONS, CLASS_YEARS } from '../constants';
-import { isValidCollegeEmail, isValidRollNumber } from '../utils/helpers';
+import { isValidCollegeEmail, isValidRollNumber, isValidPhoneNumber } from '../utils/helpers';
 
 export default function Register() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [roll, setRoll] = useState('');
   const [branch, setBranch] = useState('');
   const [division, setDivision] = useState('');
@@ -24,6 +25,7 @@ export default function Register() {
   const isAdminEmail = email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
   const isCollegeEmail = isValidCollegeEmail(email.trim().toLowerCase());
   const rollValid = isAdminEmail ? true : isValidRollNumber(roll.trim().toUpperCase());
+  const phoneValid = isAdminEmail ? (!phone.trim() || isValidPhoneNumber(phone)) : (phone.trim() ? isValidPhoneNumber(phone) : false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +37,12 @@ export default function Register() {
     }
     if (!isAdminEmail) {
       if (!rollValid) { setError('Invalid roll number. Must be alphanumeric (1-10 characters).'); return; }
+      if (!phone.trim()) { setError('Mobile number is required for student registration.'); return; }
+      if (!isValidPhoneNumber(phone)) { setError('Please enter a valid 10-digit mobile number (e.g. 9876543210).'); return; }
       if (!branch || !division || !classYear) { setError('Branch, Division, and Class Year are required.'); return; }
+    } else if (phone.trim() && !isValidPhoneNumber(phone)) {
+      setError('Please enter a valid mobile number.');
+      return;
     }
     if (password.length < 8) { setError('Password must be at least 8 characters long'); return; }
     if (!/[A-Z]/.test(password)) { setError('Password must contain at least one uppercase letter'); return; }
@@ -44,7 +51,16 @@ export default function Register() {
 
     try {
       setLoading(true);
-      const res = await api.post('/api/auth/register', { name, email: email.trim(), password, roll, branch, division, classYear });
+      const res = await api.post('/api/auth/register', { 
+        name, 
+        email: email.trim(), 
+        password, 
+        roll, 
+        branch, 
+        division, 
+        classYear,
+        phone: phone.trim()
+      });
       if (res?.data?.data?.token) {
         localStorage.setItem('campusplay_token', res.data.data.token);
       }
@@ -183,7 +199,7 @@ export default function Register() {
               </div>
             </div>
 
-            {/* ROW 2: ROLL NUMBER & PASSWORD */}
+            {/* ROW 2: ROLL NUMBER & MOBILE NUMBER */}
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-[#0F172A] mb-1 block">Roll Number</label>
@@ -203,31 +219,28 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-[#0F172A] mb-1 block">Password</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[#0F172A] mb-1 block">
+                  Mobile Number {!isAdminEmail && <span className="text-[#EF4444]">*</span>}
+                </label>
                 <div className="relative">
                   <input 
-                    aria-label="Password" 
-                    autoComplete="new-password"
-                    className="input input-has-icon-left input-has-icon-right h-[44px] text-xs sm:text-sm font-semibold w-full rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs" 
-                    placeholder="Min 8 chars" 
-                    type={showPassword ? 'text' : 'password'} 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
-                    required 
+                    aria-label="Mobile Number" 
+                    type="tel"
+                    autoComplete="tel"
+                    className="input input-has-icon-left h-[44px] text-xs sm:text-sm font-semibold w-full rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs" 
+                    placeholder="9876543210" 
+                    value={phone} 
+                    onChange={(e) => setPhone(e.target.value)} 
+                    required={!isAdminEmail} 
+                    maxLength={15} 
                   />
-                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8897A8] pointer-events-none z-10" />
-                  <button 
-                    type="button" 
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#52657A] hover:text-[#2563EB] p-1 rounded focus:outline-none focus:ring-2 focus:ring-[#2563EB] z-10" 
-                    onClick={() => setShowPassword(v => !v)}
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
+                  <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8897A8] pointer-events-none z-10" />
                 </div>
+                {phone && !isValidPhoneNumber(phone) && (
+                  <p className="mt-0.5 text-[10px] font-bold text-[#EF4444]">Enter valid 10-digit mobile number</p>
+                )}
               </div>
             </div>
-
 
             {/* ROW 3: ACADEMIC DETAILS */}
             <div className="grid gap-3 grid-cols-3">
@@ -277,6 +290,32 @@ export default function Register() {
               </div>
             </div>
 
+            {/* ROW 4: PASSWORD */}
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[#0F172A] mb-1 block">Password</label>
+              <div className="relative">
+                <input 
+                  aria-label="Password" 
+                  autoComplete="new-password"
+                  className="input input-has-icon-left input-has-icon-right h-[44px] text-xs sm:text-sm font-semibold w-full rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs" 
+                  placeholder="Min 8 chars" 
+                  type={showPassword ? 'text' : 'password'} 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  required 
+                />
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8897A8] pointer-events-none z-10" />
+                <button 
+                  type="button" 
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#52657A] hover:text-[#2563EB] p-1 rounded focus:outline-none focus:ring-2 focus:ring-[#2563EB] z-10" 
+                  onClick={() => setShowPassword(v => !v)}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
             {/* HELPER BOX */}
             <div className="p-2.5 rounded-[12px] bg-[#F8FAFC] border border-[#DCE6F0] text-[11px] text-[#52657A] font-semibold flex items-center gap-2">
               <ShieldCheck size={16} className="text-[#2563EB] flex-shrink-0" />
@@ -288,7 +327,7 @@ export default function Register() {
               aria-label="Submit registration" 
               className="btn btn-primary w-full h-[46px] rounded-[12px] text-xs sm:text-sm font-bold text-white flex items-center justify-center gap-2 shadow-md transition-all duration-200" 
               type="submit" 
-              disabled={loading || !name || !isCollegeEmail || (!isAdminEmail && (!rollValid || !branch || !division || !classYear)) || password.length < 8}
+              disabled={loading || !name || !isCollegeEmail || (!isAdminEmail && (!rollValid || !phoneValid || !branch || !division || !classYear)) || password.length < 8}
             >
               {loading ? (
                 <div className="flex items-center gap-2">

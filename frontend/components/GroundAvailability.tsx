@@ -149,10 +149,10 @@ export default function GroundAvailability() {
         )}
         
         {/* Compact Horizontal Control Panel */}
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-6 p-4 rounded-[18px] bg-[#F8FAFC] border border-[#E2E8F0]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 mb-6 p-4 rounded-[18px] bg-[#F8FAFC] border border-[#E2E8F0]">
           
           {/* Sport Selector */}
-          <div className="sm:col-span-3">
+          <div className="col-span-1 lg:col-span-3">
             <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#0F172A] mb-1 block flex items-center gap-1">
               <Sparkles size={13} className="text-[#2563EB]" />
               <span>Sport</span>
@@ -160,7 +160,7 @@ export default function GroundAvailability() {
             <select 
               value={sport} 
               onChange={(e) => handleSportChange(e.target.value)} 
-              className="select text-xs font-semibold py-2.5 px-3 h-[46px] rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs"
+              className="select text-xs font-semibold py-2.5 px-3 h-[46px] rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs w-full"
             >
               {GAMES.map((s) => (
                 <option key={s} value={s}>{s}</option>
@@ -169,7 +169,7 @@ export default function GroundAvailability() {
           </div>
 
           {/* Facility Selector */}
-          <div className="sm:col-span-4">
+          <div className="col-span-1 lg:col-span-3">
             <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#0F172A] mb-1 block flex items-center gap-1">
               <MapPin size={13} className="text-[#2563EB]" />
               <span>{getFacilityLabelForSport(sport)}</span>
@@ -177,7 +177,7 @@ export default function GroundAvailability() {
             <select 
               value={ground} 
               onChange={(e) => { setGround(e.target.value); setSelectedSlot(null); }} 
-              className="select text-xs font-semibold py-2.5 px-3 h-[46px] rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs"
+              className="select text-xs font-semibold py-2.5 px-3 h-[46px] rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs w-full"
             >
               {compatibleFacilities.map((fac) => (
                 <option key={fac.name} value={fac.name}>{fac.name}</option>
@@ -186,7 +186,7 @@ export default function GroundAvailability() {
           </div>
 
           {/* Date Selector */}
-          <div className="sm:col-span-3">
+          <div className="col-span-1 lg:col-span-3">
             <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#0F172A] mb-1 block flex items-center gap-1">
               <Calendar size={13} className="text-[#2563EB]" />
               <span>Date</span>
@@ -196,26 +196,26 @@ export default function GroundAvailability() {
               min={minDate}
               value={date} 
               onChange={(e) => { setDate(e.target.value); setSelectedSlot(null); }} 
-              className="input text-xs font-semibold py-2.5 px-3 h-[46px] rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs" 
+              className="input text-xs font-semibold py-2.5 px-3 h-[46px] rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs w-full" 
             />
           </div>
 
           {/* Check Availability Button */}
-          <div className="sm:col-span-2 flex items-end">
+          <div className="col-span-1 lg:col-span-3 flex items-end">
             <button 
               onClick={fetchAvailability} 
               disabled={loading || !ground || !date} 
-              className="btn btn-primary font-extrabold text-xs uppercase tracking-wider px-3 h-[46px] w-full rounded-[12px] flex items-center justify-center gap-1.5 shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none transition-all text-white"
+              className="btn btn-primary font-extrabold text-xs uppercase tracking-wider px-4 h-[46px] w-full rounded-[12px] flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none transition-all text-white whitespace-nowrap"
             >
               {loading ? (
                 <>
-                  <Loader2 size={16} className="animate-spin text-white" />
-                  <span>CHECKING...</span>
+                  <Loader2 size={15} className="animate-spin text-white shrink-0" />
+                  <span className="whitespace-nowrap">Checking...</span>
                 </>
               ) : (
                 <>
-                  <Search size={16} className="text-white" />
-                  <span>CHECK AVAILABILITY →</span>
+                  <Search size={15} className="text-white shrink-0" />
+                  <span className="whitespace-nowrap tracking-wider">Check Availability</span>
                 </>
               )}
             </button>

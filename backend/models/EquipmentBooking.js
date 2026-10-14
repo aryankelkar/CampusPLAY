@@ -8,11 +8,28 @@ const equipmentBookingSchema = new mongoose.Schema(
     date: { type: String, required: true },
     collectionTime: { type: String, required: true },
     returnTime: { type: String, required: true },
-    status: { type: String, enum: ['Pending', 'Approved', 'Rejected', 'Cancelled'], default: 'Pending', index: true },
+    status: { 
+      type: String, 
+      enum: [
+        'Pending', 
+        'Approved', 
+        'Rejected', 
+        'Ready for Collection', 
+        'Issued', 
+        'Return Requested', 
+        'Returned', 
+        'Cancelled', 
+        'Overdue', 
+        'Return Issue'
+      ], 
+      default: 'Pending', 
+      index: true 
+    },
     // Student snapshot
     studentName: { type: String },
     studentEmail: { type: String },
     studentRoll: { type: String },
+    phone: { type: String, default: '' },
     branch: { type: String },
     division: { type: String },
     classYear: { type: String },
@@ -20,6 +37,23 @@ const equipmentBookingSchema = new mongoose.Schema(
     equipmentName: { type: String },
     equipmentCategory: { type: String },
     groundBookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' },
+    // Issuance & Return tracking
+    issuedAt: { type: Date },
+    issuedBy: { type: String },
+    expectedReturnAt: { type: Date },
+    returnRequestedAt: { type: Date },
+    returnConfirmedAt: { type: Date },
+    returnConfirmedBy: { type: String },
+    quantityIssued: { type: Number },
+    quantityReturned: { type: Number, default: 0 },
+    quantityDamaged: { type: Number, default: 0 },
+    quantityMissing: { type: Number, default: 0 },
+    returnCondition: { 
+      type: String, 
+      enum: ['Excellent', 'Good', 'Fair', 'Damaged', 'Incomplete', 'Pending Inspection'], 
+      default: 'Pending Inspection' 
+    },
+    returnNotes: { type: String, default: '' },
     // Admin audit
     rejectionReason: { type: String, default: '' },
     approvedBy: { type: String },

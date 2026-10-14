@@ -3,9 +3,12 @@ import { body } from 'express-validator';
 import { protect, adminOnly } from '../middleware/authMiddleware.js';
 import { getBookings, createBooking, approveBooking, rejectBooking, availability, setPending, cancelBooking, deleteBooking } from '../controllers/bookingController.js';
 
+import { getBookingAcademicVerification } from '../controllers/timetableController.js';
+
 const router = express.Router();
 
 router.get('/', protect, getBookings);
+router.get('/:id/academic-verification', protect, adminOnly, getBookingAcademicVerification);
 router.post(
   '/',
   protect,

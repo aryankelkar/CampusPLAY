@@ -74,8 +74,11 @@ export default function Navbar() {
   const logout = async () => {
     try {
       await authLogout();
-      router.push('/login');
     } catch {}
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('campusplay_token');
+    }
+    router.replace('/login');
   };
 
   // Active state helper

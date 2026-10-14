@@ -130,3 +130,25 @@ export function getDisplayTime(booking: any): string {
   }
   return booking.time || 'N/A';
 }
+
+/**
+ * Validate phone number format (Indian 10-digit starting with 6-9 or E.164 international)
+ */
+export function isValidPhoneNumber(phone: string): boolean {
+  if (!phone || typeof phone !== 'string') return false;
+  const trimmed = phone.trim();
+  if (trimmed.startsWith('+')) {
+    const digitsOnly = trimmed.slice(1).replace(/[\s\-()]/g, '');
+    if (!/^\d{8,15}$/.test(digitsOnly) || /^(\d)\1+$/.test(digitsOnly)) return false;
+    if (digitsOnly.startsWith('91')) {
+      const indian = digitsOnly.slice(2);
+      return /^[6-9]\d{9}$/.test(indian) && !/^(\d)\1{9}$/.test(indian);
+    }
+    return true;
+  }
+  let digits = trimmed.replace(/[\s\-()]/g, '');
+  if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+  return /^[6-9]\d{9}$/.test(digits) && !/^(\d)\1{9}$/.test(digits);
+}
+

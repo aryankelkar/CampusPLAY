@@ -4,6 +4,8 @@ import { sendSuccess, sendError } from '../utils/responseHandler.js';
 import { BOOKING_STATUS, MAX_TEAM_MEMBERS, TIME_SLOTS, ERROR_MESSAGES } from '../constants/index.js';
 import * as bookingService from '../services/bookingService.js';
 import { emitBookingUpdate } from '../services/socketService.js';
+import { validateAndNormalizePhone } from '../utils/phoneValidator.js';
+import { validateAcademicData } from '../utils/academicValidator.js';
 
 export const getBookings = async (req, res) => {
   try {
@@ -16,7 +18,7 @@ export const getBookings = async (req, res) => {
     if (req.query?.date) queryFilter.date = req.query.date;
     const filter = { ...baseFilter, ...queryFilter };
     const bookings = await Booking.find(filter)
-      .populate('student', 'name email roll branch division classYear')
+      .populate('student', 'name email roll branch division classYear semester phone alternatePhone academicVerificationStatus academicProfileVerified')
       .sort({ createdAt: -1 });
     return sendSuccess(res, { bookings }, 'Bookings fetched');
   } catch (err) {
@@ -115,13 +117,112 @@ export const createBooking = async (req, res) => {
       }
     }
 
+    // 1. Contact Details Validation (Phone & Optional Alternate Phone)
+    const phoneInput = req.body.phone || req.user?.phone;
+    const phoneValidation = validateAndNormalizePhone(phoneInput, { isRequired: true });
+    if (!phoneValidation.valid) {
+      return sendError(res, phoneValidation.message, 400);
+    }
+    const normalizedPhone = phoneValidation.normalized;
+
+    let normalizedAltPhone = '';
+    const altPhoneInput = req.body.alternatePhone || req.user?.alternatePhone;
+    if (altPhoneInput && String(altPhoneInput).trim()) {
+      const altValidation = validateAndNormalizePhone(altPhoneInput, { isRequired: false, isAlternate: true });
+      if (!altValidation.valid) {
+        return sendError(res, altValidation.message, 400);
+      }
+      if (altValidation.normalized === normalizedPhone) {
+        return sendError(res, 'Alternate mobile number must be different from primary mobile number.', 400);
+      }
+      normalizedAltPhone = altValidation.normalized;
+    }
+
+    // 2. Academic Details Validation & Verified Profile Protection
+    let finalAcademic = {};
+    let academicVerificationStatus = req.user?.academicVerificationStatus || (req.user?.academicProfileVerified ? 'VERIFIED' : 'UNVERIFIED');
+
+    if (req.user?.academicProfileVerified === true) {
+      // Profile is verified: use verified values directly (prevent silent overwrite or client spoofing)
+      finalAcademic = {
+        roll: req.user.roll,
+        branch: req.user.branch,
+        division: req.user.division,
+        classYear: req.user.classYear,
+        semester: req.user.semester,
+      };
+      academicVerificationStatus = 'VERIFIED';
+    } else {
+      // Profile is unverified: take student-provided values with profile fallback
+      const candBranch = req.body.branch || req.user?.branch;
+      const candYear = req.body.classYear || req.body.academicYear || req.user?.classYear;
+      const candDiv = req.body.division || req.user?.division;
+      const candSem = req.body.semester !== undefined && req.body.semester !== null && req.body.semester !== ''
+        ? req.body.semester
+        : req.user?.semester;
+      const candRoll = req.user?.roll || req.body.roll;
+
+      const acadValidation = validateAcademicData({
+        branch: candBranch,
+        classYear: candYear,
+        division: candDiv,
+        semester: candSem,
+        roll: candRoll,
+      }, { isStrict: true });
+
+      if (!acadValidation.valid) {
+        return sendError(res, acadValidation.message, 400);
+      }
+
+      finalAcademic = acadValidation.normalized;
+
+      // Update student profile with provided details if profile was missing them
+      let profileUpdated = false;
+      if (!req.user?.phone && normalizedPhone) {
+        req.user.phone = normalizedPhone;
+        profileUpdated = true;
+      }
+      if (!req.user?.alternatePhone && normalizedAltPhone) {
+        req.user.alternatePhone = normalizedAltPhone;
+        profileUpdated = true;
+      }
+      if (!req.user?.branch && finalAcademic.branch) {
+        req.user.branch = finalAcademic.branch;
+        profileUpdated = true;
+      }
+      if (!req.user?.classYear && finalAcademic.classYear) {
+        req.user.classYear = finalAcademic.classYear;
+        profileUpdated = true;
+      }
+      if (!req.user?.division && finalAcademic.division) {
+        req.user.division = finalAcademic.division;
+        profileUpdated = true;
+      }
+      if (req.user?.semester === undefined && finalAcademic.semester) {
+        req.user.semester = finalAcademic.semester;
+        profileUpdated = true;
+      }
+
+      if (profileUpdated && typeof req.user?.save === 'function') {
+        try {
+          await req.user.save();
+        } catch (e) {
+          console.warn('Could not auto-update user profile with booking details:', e.message);
+        }
+      }
+    }
+
     const snapshot = {
       name: req.user?.name || '',
       email: req.user?.email || '',
-      roll: req.user?.roll || '',
-      branch: req.user?.branch || '',
-      division: req.user?.division || '',
-      classYear: req.user?.classYear || '',
+      phone: normalizedPhone,
+      alternatePhone: normalizedAltPhone || undefined,
+      roll: finalAcademic.roll || req.user?.roll || '',
+      branch: finalAcademic.branch || '',
+      division: finalAcademic.division || '',
+      classYear: finalAcademic.classYear || '',
+      semester: finalAcademic.semester || undefined,
+      academicVerificationStatus,
     };
 
     const bookingData = { 

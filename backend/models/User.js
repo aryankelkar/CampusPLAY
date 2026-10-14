@@ -19,9 +19,18 @@ const userSchema = new mongoose.Schema(
         message: 'Roll number must be alphanumeric and up to 10 characters'
       }
     },
-    branch: { type: String, enum: ['INFT', 'CMPN', 'EXTC', 'EXCS', 'BIOMED'], required: true },
-    division: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
-    classYear: { type: String, enum: ['FE', 'SE', 'TE', 'BE'], required: true },
+    branch: { type: String, enum: ['INFT', 'CMPN', 'EXTC', 'EXCS', 'BIOMED'], required: false },
+    division: { type: String, enum: ['A', 'B', 'C', 'D'], required: false },
+    classYear: { type: String, enum: ['FE', 'SE', 'TE', 'BE'], required: false },
+    semester: { type: Number, min: 1, max: 8, required: false },
+    phone: { type: String, required: false, trim: true },
+    alternatePhone: { type: String, required: false, trim: true },
+    academicProfileVerified: { type: Boolean, default: false },
+    academicVerificationStatus: { 
+      type: String, 
+      enum: ['VERIFIED', 'UNVERIFIED', 'PENDING_REVIEW'], 
+      default: 'UNVERIFIED' 
+    },
   },
   { timestamps: true }
 );

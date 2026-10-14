@@ -1,35 +1,34 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import api from '../lib/api';
+import { useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import Loader from './common/Loader';
 
 export default function ProtectedRoute({ children, role }: { children: JSX.Element; role?: 'admin' | 'student' }) {
   const router = useRouter();
-  const [allowed, setAllowed] = useState(false);
+  const { user, loading } = useAuth();
+
+  const isAuthorized = !loading && user && (!role || user.role === role);
 
   useEffect(() => {
-    let isMounted = true;
-    const check = async () => {
-      try {
-        const { data } = await api.get('/api/auth/me');
-        const me = data?.data?.user;
-        if (!role || me?.role === role) {
-          if (isMounted) setAllowed(true);
-        } else {
-          router.replace('/');
-        }
-      } catch {
-        router.replace('/login');
-      }
-    };
-    check();
-    return () => { isMounted = false; };
-  }, [role]);
+    if (loading) return;
 
-  if (!allowed) return (
-    <div className="flex items-center justify-center py-20">
-      <Loader />
-    </div>
-  );
+    if (!user) {
+      router.replace('/login');
+      return;
+    }
+
+    if (role && user.role !== role) {
+      router.replace(user.role === 'admin' ? '/admin/dashboard' : '/');
+    }
+  }, [user, loading, role, router]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex items-center justify-center py-20 min-h-[50vh]">
+        <Loader />
+      </div>
+    );
+  }
+
   return children;
 }

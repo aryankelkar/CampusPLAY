@@ -8,6 +8,8 @@ import StatusTag from '../../components/common/StatusTag';
 import AdminTabs from '../../components/AdminTabs';
 import AdminEquipmentList from '../../components/AdminEquipmentList';
 import AdminFacilityList from '../../components/AdminFacilityList';
+import AdminTimetableManagement from '../../components/timetable/AdminTimetableManagement';
+import AcademicVerificationPanel from '../../components/timetable/AcademicVerificationPanel';
 import { getDisplayTime } from '../../utils/helpers';
 import { 
   Search, 
@@ -27,11 +29,12 @@ import {
   AlertCircle,
   Loader2,
   Dumbbell,
-  Building2
+  Building2,
+  CalendarCheck
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
-  const [activeModule, setActiveModule] = useState<'grounds' | 'equipment' | 'facilities'>('grounds');
+  const [activeModule, setActiveModule] = useState<'grounds' | 'equipment' | 'facilities' | 'timetable'>('grounds');
 
   return (
     <ProtectedRoute role="admin">
@@ -87,6 +90,17 @@ export default function AdminDashboardPage() {
                 <Building2 size={15} />
                 <span>Facilities Setup</span>
               </button>
+              <button
+                onClick={() => setActiveModule('timetable')}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
+                  activeModule === 'timetable'
+                    ? 'bg-[#2563EB] text-white shadow-md'
+                    : 'text-[#52657A] hover:text-[#0F172A]'
+                }`}
+              >
+                <CalendarCheck size={15} />
+                <span>Academic Timetable</span>
+              </button>
             </div>
           </div>
 
@@ -94,8 +108,10 @@ export default function AdminDashboardPage() {
             <AdminDashboard />
           ) : activeModule === 'equipment' ? (
             <AdminEquipmentList />
-          ) : (
+          ) : activeModule === 'facilities' ? (
             <AdminFacilityList />
+          ) : (
+            <AdminTimetableManagement />
           )}
         </div>
       </div>
@@ -391,50 +407,8 @@ function AdminDashboard() {
                   {isExpanded && (
                     <div className="mt-4 pt-4 border-t border-[#E8EEF5] space-y-4 animate-in fade-in duration-200 text-xs">
                       
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        
-                        {/* Student Profile Info */}
-                        <div className="bg-[#F8FAFC] p-4 rounded-[14px] border border-[#E2E8F0] space-y-2">
-                          <h4 className="font-extrabold text-[#2563EB] text-[11px] uppercase tracking-wider border-b border-[#E2E8F0] pb-1 flex items-center gap-1">
-                            <ShieldCheck size={13} />
-                            <span>Student Information</span>
-                          </h4>
-                          <div className="flex justify-between"><span className="text-[#52657A]">Name:</span> <strong className="text-[#0F172A] font-bold">{r.name || r.student?.name || '-'}</strong></div>
-                          <div className="flex justify-between"><span className="text-[#52657A]">Roll No:</span> <strong className="text-[#0F172A] font-bold">{r.roll || r.student?.roll || '-'}</strong></div>
-                          <div className="flex justify-between"><span className="text-[#52657A]">Email:</span> <strong className="text-[#0F172A] font-bold truncate max-w-[180px]">{r.email || r.student?.email || '-'}</strong></div>
-                          <div className="flex justify-between"><span className="text-[#52657A]">Branch:</span> <strong className="text-[#0F172A] font-bold">{r.branch || r.student?.branch || '-'}</strong></div>
-                          <div className="flex justify-between"><span className="text-[#52657A]">Division:</span> <strong className="text-[#0F172A] font-bold">{r.division || r.student?.division || '-'}</strong></div>
-                        </div>
-
-                        {/* Booking Specification */}
-                        <div className="bg-[#F8FAFC] p-4 rounded-[14px] border border-[#E2E8F0] space-y-2">
-                          <h4 className="font-extrabold text-[#2563EB] text-[11px] uppercase tracking-wider border-b border-[#E2E8F0] pb-1 flex items-center gap-1">
-                            <Trophy size={13} />
-                            <span>Booking Specification</span>
-                          </h4>
-                          <div className="flex justify-between"><span className="text-[#52657A]">Sport:</span> <strong className="text-[#0F172A] font-bold">{r.game}</strong></div>
-                          <div className="flex justify-between"><span className="text-[#52657A]">Ground:</span> <strong className="text-[#0F172A] font-bold">{r.ground}</strong></div>
-                          <div className="flex justify-between"><span className="text-[#52657A]">Date:</span> <strong className="text-[#0F172A] font-bold">{r.date}</strong></div>
-                          <div className="flex justify-between"><span className="text-[#52657A]">Time:</span> <strong className="text-[#2563EB] font-bold">{getDisplayTime(r)}</strong></div>
-                          <div className="flex justify-between items-center"><span className="text-[#52657A]">Status:</span> <StatusTag status={r.status} /></div>
-                        </div>
-
-                      </div>
-
-                      {/* Squad Members */}
-                      {Array.isArray(r.teamMembers) && r.teamMembers.length > 0 && (
-                        <div className="bg-[#F8FAFC] p-4 rounded-[14px] border border-[#E2E8F0]">
-                          <h4 className="font-extrabold text-[#0F172A] text-[11px] uppercase tracking-wider mb-2">Squad Members ({r.teamMembers.length})</h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {r.teamMembers.map((m: any, idx: number) => (
-                              <div key={idx} className="bg-white p-2.5 rounded-[10px] border border-[#E8EEF5]">
-                                <div className="font-bold text-[#0F172A]">{m.name}</div>
-                                <div className="text-[11px] text-[#52657A] mt-0.5">{m.roll} • {m.email}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      {/* Academic Profile, Timetable Conflict Verification, and Squad Members Panel */}
+                      <AcademicVerificationPanel booking={r} />
 
                       {/* Admin Approval Actions Bar */}
                       <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#E8EEF5]">

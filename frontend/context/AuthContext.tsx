@@ -1,7 +1,20 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import api from '../lib/api';
 
-type User = { _id: string; name: string; email: string; role: 'admin' | 'student' } | null;
+type User = {
+  _id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'student';
+  phone?: string;
+  alternatePhone?: string;
+  roll?: string;
+  branch?: string;
+  division?: string;
+  classYear?: string;
+  semester?: number;
+  academicProfileVerified?: boolean;
+} | null;
 
 type AuthContextType = {
   user: User;
@@ -21,6 +34,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await api.get('/api/auth/me');
       setUser(data?.data?.user || null);
     } catch {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('campusplay_token');
+      }
       setUser(null);
     } finally {
       setLoading(false);
@@ -36,7 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Logout error:', err);
       }
     } finally {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('campusplay_token');
+      }
       setUser(null);
+      setLoading(false);
     }
   }, []);
 

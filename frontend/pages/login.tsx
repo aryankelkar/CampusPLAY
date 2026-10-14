@@ -18,9 +18,9 @@ export default function Login() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      window.location.href = '/';
+      router.replace(user.role === 'admin' ? '/admin/dashboard' : '/');
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +43,7 @@ export default function Login() {
         localStorage.setItem('campusplay_token', res.data.data.token);
       }
       await refresh();
-      window.location.href = '/';
+      router.replace('/');
     } catch (err: any) {
       const data = err?.response?.data;
       const firstValidationMsg = Array.isArray(data?.errors) && data.errors.length > 0 ? data.errors[0].msg : '';

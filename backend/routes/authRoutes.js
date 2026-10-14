@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import { register, login, me, logout } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { validatePassword } from '../utils/passwordValidator.js';
+import { validateAndNormalizePhone } from '../utils/phoneValidator.js';
 import { ADMIN_EMAIL } from '../constants/index.js';
 
 const router = express.Router();
@@ -25,6 +26,13 @@ router.post(
       }
       return true;
     }),
+    body('phone').optional({ checkFalsy: true }).custom((value) => {
+      const validation = validateAndNormalizePhone(value, { isRequired: false });
+      if (!validation.valid) {
+        throw new Error(validation.message || 'Invalid mobile number');
+      }
+      return true;
+    }),
   ],
   register
 );
@@ -39,6 +47,6 @@ router.post(
 );
 
 router.get('/me', protect, me);
-router.post('/logout', protect, logout);
+router.post('/logout', logout);
 
 export default router;
