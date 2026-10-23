@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { 
@@ -31,27 +31,7 @@ export default function GroundAvailability() {
   const [error, setError] = useState('');
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
 
-  // Auto-fetch initial availability on mount
-  useEffect(() => {
-    if (ground && date) {
-      fetchAvailability();
-    }
-  }, []);
-
-  const compatibleFacilities = useMemo(() => {
-    return getCompatibleFacilities(sport);
-  }, [sport]);
-
-  const handleSportChange = (newSport: string) => {
-    setSport(newSport);
-    const compatible = getCompatibleFacilities(newSport);
-    if (!compatible.some(f => f.name === ground)) {
-      setGround(compatible[0]?.name || '');
-    }
-    setSelectedSlot(null);
-  };
-
-  const fetchAvailability = async () => {
+  const fetchAvailability = useCallback(async () => {
     setError('');
     setSelectedSlot(null);
 
@@ -69,6 +49,26 @@ export default function GroundAvailability() {
     } finally {
       setLoading(false);
     }
+  }, [ground, date]);
+
+  // Auto-fetch initial availability on mount or filter change
+  useEffect(() => {
+    if (ground && date) {
+      fetchAvailability();
+    }
+  }, [fetchAvailability, ground, date]);
+
+  const compatibleFacilities = useMemo(() => {
+    return getCompatibleFacilities(sport);
+  }, [sport]);
+
+  const handleSportChange = (newSport: string) => {
+    setSport(newSport);
+    const compatible = getCompatibleFacilities(newSport);
+    if (!compatible.some(f => f.name === ground)) {
+      setGround(compatible[0]?.name || '');
+    }
+    setSelectedSlot(null);
   };
 
   // Real-time socket updates for availability
@@ -122,10 +122,10 @@ export default function GroundAvailability() {
   const totalCount = availability.length;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 font-inter">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 font-inter">
       
       {/* Header */}
-      <div className="text-center max-w-xl mx-auto mb-6">
+      <div className="text-center max-w-2xl mx-auto mb-8">
         <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#DBEAFE] text-[#2563EB] text-[11px] font-extrabold uppercase tracking-[0.08em] mb-1.5 border border-[#BFDBFE]">
           Ground Availability
         </span>

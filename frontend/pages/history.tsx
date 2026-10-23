@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '../components/ProtectedRoute';
 import api from '../lib/api';
@@ -29,10 +29,13 @@ function BookingHistory() {
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [returnModalBooking, setReturnModalBooking] = useState<any | null>(null);
+  const isFetchingRef = useRef(false);
 
-  const fetchAllHistory = async () => {
+  const fetchAllHistory = useCallback(async (isInitial = false) => {
+    if (isFetchingRef.current) return;
     try {
-      setLoading(true);
+      isFetchingRef.current = true;
+      if (isInitial) setLoading(true);
       const [{ data: gData }, { data: eqData }] = await Promise.all([
         api.get('/bookings').catch(() => ({ data: { data: { bookings: [] } } })),
         api.get('/equipment-bookings').catch(() => ({ data: { data: { bookings: [] } } })),
@@ -44,22 +47,23 @@ function BookingHistory() {
       setGroundBookings(gList);
       setEquipmentBookings(eqList);
     } finally {
-      setLoading(false);
+      isFetchingRef.current = false;
+      if (isInitial) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => { 
-    fetchAllHistory(); 
-    const interval = setInterval(() => { fetchAllHistory(); }, 30000);
+    fetchAllHistory(true); 
+    const interval = setInterval(() => { fetchAllHistory(false); }, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchAllHistory]);
 
   // Real-time Socket.io updates
   useEffect(() => {
     if (!socket) return;
 
     const handleUpdate = () => {
-      fetchAllHistory();
+      fetchAllHistory(false);
     };
 
     socket.on('booking:cancelled', handleUpdate);
@@ -95,7 +99,7 @@ function BookingHistory() {
       socket.off('equipment-booking:cancelled', handleUpdate);
       socket.off('equipment-booking:deleted', handleUpdate);
     };
-  }, [socket]);
+  }, [socket, fetchAllHistory]);
 
   useEffect(() => {
     if (toast) {
@@ -206,8 +210,8 @@ function BookingHistory() {
   }, [filteredBookings, searchQuery]);
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#F3F7FC] text-[#0F172A] font-inter py-6 sm:py-8">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+    <div className="w-full text-[#0F172A] font-inter py-2">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Toast Notification */}
         {toast && (

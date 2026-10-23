@@ -63,10 +63,10 @@ export default function Login() {
           {/* Background Image with Vibrant Sports Overlay */}
           <div className="absolute inset-0 z-0 opacity-60">
             <Image 
-              src="/images/hero-sports.png" 
+              src="/images/campus-grounds.jpg" 
               alt="Campus sports grounds" 
               fill 
-              className="object-cover object-center"
+              className="object-cover object-[center_60%]"
               priority
             />
           </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../../lib/api';
 import { 
   Calendar, 
@@ -120,7 +120,7 @@ export default function AdminTimetableManagement() {
   };
 
   // Fetch Published Timetable Document for Selected Group
-  const loadPublishedDoc = async () => {
+  const loadPublishedDoc = useCallback(async () => {
     try {
       setDocLoading(true);
       const { data } = await api.get('/timetables/documents', {
@@ -137,10 +137,10 @@ export default function AdminTimetableManagement() {
     } finally {
       setDocLoading(false);
     }
-  };
+  }, [selectedBranch, selectedYear, selectedDivision]);
 
   // Fetch Full Document History
-  const loadDocumentHistory = async () => {
+  const loadDocumentHistory = useCallback(async () => {
     try {
       setDocHistoryLoading(true);
       const { data } = await api.get('/timetables/documents');
@@ -150,10 +150,10 @@ export default function AdminTimetableManagement() {
     } finally {
       setDocHistoryLoading(false);
     }
-  };
+  }, []);
 
   // Fetch Sessions for View/Manage Tab
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     try {
       setLoading(true);
       const params: any = {
@@ -173,20 +173,10 @@ export default function AdminTimetableManagement() {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'view' || activeTab === 'manage') {
-      loadSessions();
-      loadPublishedDoc();
-    } else if (activeTab === 'history') {
-      loadHistory();
-      loadDocumentHistory();
-    }
-  }, [activeTab, selectedBranch, selectedYear, selectedDivision, selectedDay, selectedSemester]);
+  }, [selectedBranch, selectedYear, selectedDivision, selectedDay, selectedSemester]);
 
   // Load Import History
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     try {
       setHistoryLoading(true);
       const { data } = await api.get('/timetables/import/history');
@@ -196,7 +186,17 @@ export default function AdminTimetableManagement() {
     } finally {
       setHistoryLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'view' || activeTab === 'manage') {
+      loadSessions();
+      loadPublishedDoc();
+    } else if (activeTab === 'history') {
+      loadHistory();
+      loadDocumentHistory();
+    }
+  }, [activeTab, loadSessions, loadPublishedDoc, loadHistory, loadDocumentHistory]);
 
   // Download Template
   const handleDownloadTemplate = async () => {

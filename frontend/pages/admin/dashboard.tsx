@@ -38,8 +38,8 @@ export default function AdminDashboardPage() {
 
   return (
     <ProtectedRoute role="admin">
-      <div className="min-h-[calc(100vh-64px)] bg-[#F3F7FC] text-[#0F172A] font-inter py-6 sm:py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <div className="w-full text-[#0F172A] font-inter py-2">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Admin Eyebrow & Title */}
           <div className="text-center max-w-xl mx-auto mb-6">

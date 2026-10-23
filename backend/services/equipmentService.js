@@ -132,11 +132,17 @@ export const recordInventoryTransaction = async ({
   }
 };
 
+let isEquipmentSeeded = false;
+
 // Seed default equipment items if database table is empty
 export const seedDefaultEquipment = async () => {
+  if (isEquipmentSeeded) return;
   try {
     const count = await Equipment.countDocuments();
-    if (count > 0) return;
+    if (count > 0) {
+      isEquipmentSeeded = true;
+      return;
+    }
 
     const defaultItems = [
       { name: 'Cricket Bat', category: 'Cricket', description: 'English willow & Kashmir willow match bats', totalQuantity: 10, image: '/equipment/cricket-bat.png' },

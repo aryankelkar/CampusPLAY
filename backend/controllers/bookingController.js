@@ -19,7 +19,8 @@ export const getBookings = async (req, res) => {
     const filter = { ...baseFilter, ...queryFilter };
     const bookings = await Booking.find(filter)
       .populate('student', 'name email roll branch division classYear semester phone alternatePhone academicVerificationStatus academicProfileVerified')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
     return sendSuccess(res, { bookings }, 'Bookings fetched');
   } catch (err) {
     return sendError(res, ERROR_MESSAGES.SERVER_ERROR, 500);
@@ -241,7 +242,8 @@ export const createBooking = async (req, res) => {
     return sendSuccess(res, { booking }, 'Booking created successfully (Pending Approval)', 201);
   } catch (err) {
     console.error('❌ Error creating booking:', err.message);
-    return sendError(res, err.message || ERROR_MESSAGES.SERVER_ERROR, 400);
+    const statusCode = err.statusCode || 400;
+    return sendError(res, err.message || ERROR_MESSAGES.SERVER_ERROR, statusCode);
   }
 };
 

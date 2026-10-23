@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Head from 'next/head';
 import EquipmentBookingWizard from '../../components/EquipmentBookingWizard';
 import { 
@@ -44,7 +44,7 @@ export default function EquipmentPage() {
 
   const categories = ['All', 'Cricket', 'Football', 'Volleyball', 'Badminton', 'General'];
 
-  const fetchEquipment = async () => {
+  const fetchEquipment = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -60,11 +60,11 @@ export default function EquipmentPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterDate, filterCollectionTime, filterReturnTime]);
 
   useEffect(() => {
     fetchEquipment();
-  }, [filterDate, filterCollectionTime, filterReturnTime]);
+  }, [fetchEquipment]);
 
   const filteredItems = useMemo(() => {
     return equipmentList.filter((item) => {
@@ -140,8 +140,8 @@ export default function EquipmentPage() {
 
           {/* Equipment Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                 <div key={n} className="h-48 rounded-[20px] bg-white border border-[#E2E8F0] p-6 animate-pulse" />
               ))}
             </div>
@@ -157,7 +157,7 @@ export default function EquipmentPage() {
               <p className="text-xs text-[#64748B]">Try selecting a different category or search term.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredItems.map((item) => {
                 const avail = item.availableQuantity ?? item.totalQuantity;
                 const isOutOfStock = avail <= 0;

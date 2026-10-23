@@ -16,7 +16,9 @@ import {
   ChevronDown,
   Menu,
   X,
-  Dumbbell
+  Dumbbell,
+  Trophy,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -64,6 +66,22 @@ export default function Navbar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Body scroll lock when mobile navigation is open
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (mobileOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'unset';
+      }
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        document.body.style.overflow = 'unset';
+      }
+    };
+  }, [mobileOpen]);
+
   const handleNavClick = () => {
     setMobileOpen(false);
     setDropdown(false);
@@ -88,40 +106,54 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-[12px] z-[1000] w-full px-3 sm:px-6 font-jakarta transition-all duration-200">
+    <header className="sticky top-[12px] z-[1000] w-full px-3 sm:px-6 mb-2 sm:mb-3 font-jakarta transition-all duration-200">
       <div 
-        className={`mx-auto max-w-[1450px] h-[60px] sm:h-[66px] px-4 sm:px-6 flex items-center justify-between transition-all duration-200 border rounded-[18px] bg-white border-[#DCE6F0] ${
+        className={`relative mx-auto max-w-[1536px] h-[64px] sm:h-[68px] px-3.5 sm:px-5 flex items-center justify-between transition-all duration-300 rounded-[20px] backdrop-blur-md backdrop-saturate-150 ${
           scrolled 
-            ? 'shadow-[7px_7px_18px_rgba(148,163,184,0.22),-7px_-7px_18px_rgba(255,255,255,0.95)] border-[#CBD5E1]'
-            : 'shadow-[7px_7px_18px_rgba(148,163,184,0.16),-7px_-7px_18px_rgba(255,255,255,0.90)]'
+            ? 'bg-white/95 border border-[#CBD5E1]/90 shadow-[0_10px_30px_-5px_rgba(15,23,42,0.12),0_20px_40px_-15px_rgba(37,99,235,0.08),inset_0_1px_1px_rgba(255,255,255,1)]'
+            : 'bg-white/85 border border-white/80 ring-1 ring-slate-900/5 shadow-[0_8px_25px_-5px_rgba(15,23,42,0.08),0_15px_30px_-10px_rgba(37,99,235,0.05),inset_0_1px_2px_rgba(255,255,255,0.95)]'
         }`}
       >
-        {/* LEFT: CAMPUSPLAY BRAND TEXT */}
+        {/* Top Specular Sheen Line */}
+        <div className="absolute top-0 inset-x-6 h-[1.5px] bg-gradient-to-r from-transparent via-white to-transparent pointer-events-none rounded-t-[20px]" />
+        
+        {/* Subtle Athletic Accent Underline */}
+        <div className="absolute bottom-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-[#2563EB]/20 to-transparent pointer-events-none" />
+
+        {/* LEFT: ATHLETIC CREST & CAMPUSPLAY BRAND */}
         <Link 
           href="/" 
-          className="flex items-center gap-1.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] rounded-xl p-1" 
+          className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] rounded-xl p-1" 
           title="CampusPlay Home"
           onClick={handleNavClick}
         >
-          <span className="text-base sm:text-lg font-extrabold tracking-tight text-[#0F172A] uppercase">
-            CampusPlay
-          </span>
-          <span className="w-2 h-2 rounded-full bg-[#2563EB]"></span>
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-[11px] bg-gradient-to-br from-[#2563EB] via-[#1D4ED8] to-[#1E40AF] flex items-center justify-center text-white shadow-[0_3px_10px_rgba(37,99,235,0.35),inset_0_1px_1px_rgba(255,255,255,0.4)] group-hover:scale-105 group-hover:shadow-[0_4px_14px_rgba(37,99,235,0.45)] transition-all duration-200">
+            <Trophy size={17} className="text-white drop-shadow-xs" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-base sm:text-lg font-black tracking-tight text-[#0F172A] uppercase leading-none font-sans">
+              Campus<span className="text-[#2563EB]">Play</span>
+            </span>
+            <span className="text-[9px] font-extrabold tracking-widest text-[#52657A] uppercase leading-none mt-1 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+              University Sports
+            </span>
+          </div>
         </Link>
 
-        {/* CENTER: DESKTOP NAVIGATION ITEMS */}
-        <nav className="hidden md:flex items-center gap-1 sm:gap-1.5" aria-label="Main Navigation">
+        {/* CENTER: DESKTOP SEGMENTED DOCK */}
+        <nav className="hidden md:flex items-center p-1 bg-[#F1F5F9]/70 backdrop-blur-xs rounded-[16px] border border-[#E2E8F0]/80 shadow-[inset_0_1px_2px_rgba(148,163,184,0.12)]" aria-label="Main Navigation">
           {/* HOME */}
           <Link 
             href="/"
             onClick={handleNavClick}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold transition-all duration-200 ${
               isActive('/') 
-                ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
-                : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+                ? 'bg-white text-[#2563EB] border border-[#BFDBFE] shadow-[0_2px_6px_rgba(37,99,235,0.12),inset_0_1px_1px_rgba(255,255,255,1)] font-extrabold scale-[1.02]'
+                : 'text-[#52657A] hover:bg-white/60 hover:text-[#0F172A] hover:-translate-y-[0.5px]'
             }`}
           >
-            <HomeIcon size={18} strokeWidth={isActive('/') ? 2.3 : 2} className={isActive('/') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+            <HomeIcon size={15} strokeWidth={isActive('/') ? 2.4 : 2} className={isActive('/') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
             <span>Home</span>
           </Link>
 
@@ -130,13 +162,13 @@ export default function Navbar() {
             <Link 
               href="/bookings"
               onClick={handleNavClick}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold transition-all duration-200 ${
                 isActive('/bookings') 
-                  ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
-                  : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+                  ? 'bg-white text-[#2563EB] border border-[#BFDBFE] shadow-[0_2px_6px_rgba(37,99,235,0.12),inset_0_1px_1px_rgba(255,255,255,1)] font-extrabold scale-[1.02]'
+                  : 'text-[#52657A] hover:bg-white/60 hover:text-[#0F172A] hover:-translate-y-[0.5px]'
               }`}
             >
-              <CalendarCheck size={18} strokeWidth={isActive('/bookings') ? 2.3 : 2} className={isActive('/bookings') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+              <CalendarCheck size={15} strokeWidth={isActive('/bookings') ? 2.4 : 2} className={isActive('/bookings') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
               <span>Book</span>
             </Link>
           )}
@@ -145,43 +177,27 @@ export default function Navbar() {
           <Link 
             href="/equipment"
             onClick={handleNavClick}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold transition-all duration-200 ${
               isActive('/equipment') 
-                ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
-                : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+                ? 'bg-white text-[#2563EB] border border-[#BFDBFE] shadow-[0_2px_6px_rgba(37,99,235,0.12),inset_0_1px_1px_rgba(255,255,255,1)] font-extrabold scale-[1.02]'
+                : 'text-[#52657A] hover:bg-white/60 hover:text-[#0F172A] hover:-translate-y-[0.5px]'
             }`}
           >
-            <Dumbbell size={18} strokeWidth={isActive('/equipment') ? 2.3 : 2} className={isActive('/equipment') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+            <Dumbbell size={15} strokeWidth={isActive('/equipment') ? 2.4 : 2} className={isActive('/equipment') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
             <span>Equipment</span>
           </Link>
-
-          {/* HISTORY (Non-admin) */}
-          {user?.role !== 'admin' && (
-            <Link 
-              href="/history"
-              onClick={handleNavClick}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
-                isActive('/history') 
-                  ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
-                  : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
-              }`}
-            >
-              <History size={18} strokeWidth={isActive('/history') ? 2.3 : 2} className={isActive('/history') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
-              <span>History</span>
-            </Link>
-          )}
 
           {/* AVAILABILITY */}
           <Link 
             href="/availability"
             onClick={handleNavClick}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold transition-all duration-200 ${
               isActive('/availability') 
-                ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
-                : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+                ? 'bg-white text-[#2563EB] border border-[#BFDBFE] shadow-[0_2px_6px_rgba(37,99,235,0.12),inset_0_1px_1px_rgba(255,255,255,1)] font-extrabold scale-[1.02]'
+                : 'text-[#52657A] hover:bg-white/60 hover:text-[#0F172A] hover:-translate-y-[0.5px]'
             }`}
           >
-            <Clock size={18} strokeWidth={isActive('/availability') ? 2.3 : 2} className={isActive('/availability') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+            <Clock size={15} strokeWidth={isActive('/availability') ? 2.4 : 2} className={isActive('/availability') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
             <span>Availability</span>
           </Link>
 
@@ -189,66 +205,82 @@ export default function Navbar() {
           <Link 
             href="/about"
             onClick={handleNavClick}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold transition-all duration-200 ${
               isActive('/about') 
-                ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
-                : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+                ? 'bg-white text-[#2563EB] border border-[#BFDBFE] shadow-[0_2px_6px_rgba(37,99,235,0.12),inset_0_1px_1px_rgba(255,255,255,1)] font-extrabold scale-[1.02]'
+                : 'text-[#52657A] hover:bg-white/60 hover:text-[#0F172A] hover:-translate-y-[0.5px]'
             }`}
           >
-            <Info size={18} strokeWidth={isActive('/about') ? 2.3 : 2} className={isActive('/about') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+            <Info size={15} strokeWidth={isActive('/about') ? 2.4 : 2} className={isActive('/about') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
             <span>About</span>
           </Link>
+
+          {/* HISTORY (Non-admin) */}
+          {user?.role !== 'admin' && (
+            <Link 
+              href="/history"
+              onClick={handleNavClick}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold transition-all duration-200 ${
+                isActive('/history') 
+                  ? 'bg-white text-[#2563EB] border border-[#BFDBFE] shadow-[0_2px_6px_rgba(37,99,235,0.12),inset_0_1px_1px_rgba(255,255,255,1)] font-extrabold scale-[1.02]'
+                  : 'text-[#52657A] hover:bg-white/60 hover:text-[#0F172A] hover:-translate-y-[0.5px]'
+              }`}
+            >
+              <History size={15} strokeWidth={isActive('/history') ? 2.4 : 2} className={isActive('/history') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+              <span>History</span>
+            </Link>
+          )}
 
           {/* ADMIN (Admin only) */}
           {user?.role === 'admin' && (
             <Link 
               href="/admin/dashboard"
               onClick={handleNavClick}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-[12px] text-sm font-semibold transition-all duration-200 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold transition-all duration-200 ${
                 isActive('/admin') 
-                  ? 'bg-[#DBEAFE] text-[#2563EB] border border-[#93C5FD]/60 shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] font-bold'
-                  : 'text-[#52657A] hover:bg-[#EFF6FF] hover:text-[#2563EB] hover:-translate-y-[1px] active:translate-y-0 active:shadow-[inset_2px_2px_5px_rgba(148,163,184,0.16),inset_-2px_-2px_5px_rgba(255,255,255,0.85)]'
+                  ? 'bg-white text-[#2563EB] border border-[#BFDBFE] shadow-[0_2px_6px_rgba(37,99,235,0.12),inset_0_1px_1px_rgba(255,255,255,1)] font-extrabold scale-[1.02]'
+                  : 'text-[#52657A] hover:bg-white/60 hover:text-[#0F172A] hover:-translate-y-[0.5px]'
               }`}
             >
-              <ShieldCheck size={18} strokeWidth={isActive('/admin') ? 2.3 : 2} className={isActive('/admin') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
+              <ShieldCheck size={15} strokeWidth={isActive('/admin') ? 2.4 : 2} className={isActive('/admin') ? 'text-[#2563EB]' : 'text-[#52657A]'} />
               <span>Admin</span>
             </Link>
           )}
         </nav>
 
         {/* RIGHT: SETTINGS + PROFILE / USER CONTROL */}
-        <div className="hidden md:flex items-center gap-3 relative">
+        <div className="hidden md:flex items-center gap-2.5 relative">
           {!loading && (
             !user ? (
               <div className="flex items-center gap-2">
                 <Link 
                   href="/login"
                   onClick={handleNavClick}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-[12px] text-sm font-semibold text-[#52657A] hover:text-[#2563EB] hover:bg-[#EFF6FF] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] text-xs font-bold text-[#52657A] hover:text-[#2563EB] hover:bg-white/70 border border-transparent hover:border-[#DCE6F0] transition-all duration-200"
                 >
-                  <LogIn size={18} strokeWidth={2} />
+                  <LogIn size={16} strokeWidth={2} />
                   <span>Login</span>
                 </Link>
                 <Link 
                   href="/register"
                   onClick={handleNavClick}
-                  className="btn btn-primary px-4 py-2 text-sm font-bold flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                  className="btn btn-primary px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5 rounded-[12px] shadow-[0_2px_8px_rgba(37,99,235,0.3)] hover:-translate-y-0.5 active:translate-y-0 transition-all"
                 >
-                  <UserPlus size={18} strokeWidth={2} />
+                  <UserPlus size={16} strokeWidth={2} />
                   <span>Register</span>
                 </Link>
               </div>
             ) : (
-              <div className="relative flex items-center gap-2.5">
+              <div className="relative flex items-center gap-2">
                 {/* COMPACT SETTINGS ICON BUTTON */}
                 <Link
                   href="/settings"
                   onClick={handleNavClick}
-                  className="p-2 rounded-[12px] text-[#52657A] hover:text-[#2563EB] hover:bg-[#EFF6FF] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                  className="w-9 h-9 rounded-[12px] bg-white/70 border border-[#DCE6F0]/80 shadow-xs flex items-center justify-center text-[#52657A] hover:text-[#2563EB] hover:bg-white hover:border-[#BFDBFE] transition-all duration-200"
                   title="Settings"
                   aria-label="Settings"
                 >
-                  <SettingsIcon size={18} />
+                  <SettingsIcon size={17} />
                 </Link>
 
                 {/* PROFILE BUTTON: [ Avatar ] User Name ▾ */}
@@ -256,26 +288,33 @@ export default function Navbar() {
                   onClick={() => setDropdown((v) => !v)}
                   aria-expanded={dropdown}
                   aria-haspopup="true"
-                  className="flex items-center gap-2.5 px-3 py-1.5 rounded-[12px] bg-[#F8FAFC] border border-[#DCE6F0] shadow-[4px_4px_10px_rgba(148,163,184,0.14),-4px_-4px_10px_rgba(255,255,255,0.85)] hover:bg-[#EFF6FF] hover:text-[#2563EB] transition-all duration-200 text-sm font-semibold text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-[12px] bg-white/80 border border-[#DCE6F0] shadow-[0_2px_6px_rgba(15,23,42,0.06),inset_0_1px_1px_rgba(255,255,255,1)] hover:bg-white hover:border-[#BFDBFE] hover:shadow-[0_4px_12px_rgba(37,99,235,0.1)] transition-all duration-200 text-xs font-bold text-[#0F172A]"
                   title={`Account options for ${user?.name || 'User'}`}
                 >
-                  <div className="w-7 h-7 rounded-lg bg-[#2563EB] text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                  <div className="w-7 h-7 rounded-[9px] bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] text-white font-black text-xs flex items-center justify-center shadow-xs ring-1 ring-white">
                     {avatar}
                   </div>
-                  <span className="font-bold max-w-[110px] truncate">{user?.name ? user.name.split(' ')[0] : 'User'}</span>
-                  <ChevronDown size={16} className={`text-[#52657A] transition-transform duration-200 ${dropdown ? 'rotate-180' : ''}`} />
+                  <span className="font-extrabold max-w-[110px] truncate text-[#0F172A]">
+                    {user?.name ? user.name.split(' ')[0] : 'User'}
+                  </span>
+                  {user?.role === 'admin' && (
+                    <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[#DBEAFE] text-[#1D4ED8] border border-[#BFDBFE]">
+                      Admin
+                    </span>
+                  )}
+                  <ChevronDown size={14} className={`text-[#52657A] transition-transform duration-200 ${dropdown ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* REDESIGNED NEUMORPHIC DROPDOWN PANEL */}
+                {/* REDESIGNED FROSTED DROPDOWN PANEL */}
                 {dropdown && (
                   <>
                     <div 
                       className="fixed inset-0 z-40" 
                       onClick={() => setDropdown(false)}
                     />
-                    <div className="absolute right-0 top-14 w-64 p-2 z-50 rounded-[16px] bg-white border border-[#DCE6F0] shadow-[7px_7px_18px_rgba(148,163,184,0.18),-7px_-7px_18px_rgba(255,255,255,0.90)] animate-fade-in">
+                    <div className="absolute right-0 top-12 w-64 p-2 z-50 rounded-[18px] bg-white/95 backdrop-blur-md border border-[#DCE6F0] shadow-[0_12px_32px_-4px_rgba(15,23,42,0.14),0_4px_12px_rgba(37,99,235,0.06),inset_0_1px_1px_rgba(255,255,255,1)] animate-fade-in">
                       {/* USER INFO HEADER */}
-                      <div className="px-3.5 py-3 mb-1.5 rounded-[12px] bg-[#EDF4FB] border border-[#DCE6F0]">
+                      <div className="px-3.5 py-3 mb-1.5 rounded-[12px] bg-gradient-to-br from-[#F0F6FC] to-[#EDF4FB] border border-[#DCE6F0]">
                         <p className="text-sm font-bold text-[#0F172A] truncate">{user?.name || 'User'}</p>
                         <p className="text-xs text-[#52657A] truncate mt-0.5">{user?.email || ''}</p>
                         <span className="inline-block text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-[#DBEAFE] text-[#1D4ED8] mt-2 border border-[#BFDBFE]">
@@ -334,14 +373,14 @@ export default function Navbar() {
         {/* MOBILE: HAMBURGER CONTROL */}
         <div className="flex items-center gap-2 md:hidden">
           {!loading && user && (
-            <div className="w-8 h-8 rounded-lg bg-[#2563EB] text-white font-bold text-xs flex items-center justify-center shadow-xs">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] text-white font-bold text-xs flex items-center justify-center shadow-xs ring-1 ring-white">
               {avatar}
             </div>
           )}
           <button 
             aria-label="Toggle navigation menu" 
             aria-expanded={mobileOpen}
-            className="p-2 rounded-[12px] bg-white border border-[#DCE6F0] text-[#0F172A] shadow-[4px_4px_10px_rgba(148,163,184,0.14)] active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#2563EB]" 
+            className="p-2 rounded-[12px] bg-white/80 border border-[#DCE6F0] text-[#0F172A] shadow-xs active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-[#2563EB]" 
             onClick={() => setMobileOpen((v) => !v)}
           >
             {mobileOpen ? <X size={20} className="text-[#2563EB]" /> : <Menu size={20} className="text-[#0F172A]" />}

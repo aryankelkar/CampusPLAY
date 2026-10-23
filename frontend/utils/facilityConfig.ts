@@ -20,6 +20,7 @@ export const CAMPUS_FACILITIES: FacilityInfo[] = [
     location: 'Main Sports Complex',
     capacity: '22 Players',
     description: 'Full-sized outdoor turf ground for Football, Cricket, and Volleyball matches.',
+    image: '/images/campus-grounds.jpg',
     status: 'ACTIVE',
   },
   {
@@ -29,7 +30,8 @@ export const CAMPUS_FACILITIES: FacilityInfo[] = [
     supportedSports: ['Football', 'Cricket', 'Volleyball'],
     location: 'West Campus',
     capacity: '22 Players',
-    description: 'Secondary outdoor multi-purpose sports ground.',
+    description: 'Secondary outdoor multi-purpose sports ground with natural grass turf.',
+    image: '/images/campus-aerial-ground.jpg',
     status: 'ACTIVE',
   },
   {
@@ -37,9 +39,10 @@ export const CAMPUS_FACILITIES: FacilityInfo[] = [
     name: 'Basketball Court',
     type: 'COURT',
     supportedSports: ['Basketball'],
-    location: 'Indoor Sports Arena',
+    location: 'Outdoor Campus Court',
     capacity: '10 Players',
-    description: 'Standard synthetic hardwood basketball court with modern lighting.',
+    description: 'Outdoor campus basketball court with standard backboard and hoops.',
+    image: '/images/campus-basketball.jpg',
     status: 'ACTIVE',
   },
   {
@@ -50,6 +53,7 @@ export const CAMPUS_FACILITIES: FacilityInfo[] = [
     location: 'Indoor Sports Arena',
     capacity: '4 Players',
     description: 'Indoor badminton court with professional mat surface and nets.',
+    image: '/images/campus-volleyball.jpg',
     status: 'ACTIVE',
   },
 ];

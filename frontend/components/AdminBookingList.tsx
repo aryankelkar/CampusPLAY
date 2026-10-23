@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 import AdminTabs from './AdminTabs';
 import ConfirmModal from './common/ConfirmModal';
@@ -84,7 +84,7 @@ export default function AdminBookingList({
   } | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
       const { data } = await api.get('/bookings');
@@ -100,11 +100,11 @@ export default function AdminBookingList({
     } finally { 
       setLoading(false); 
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => { 
     load(); 
-  }, [statusFilter]);
+  }, [load]);
 
   const act = async (id: string, action: 'approve' | 'reject' | 'pending') => {
     try {
@@ -128,7 +128,7 @@ export default function AdminBookingList({
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#F3F7FC] text-[#0F172A] font-inter py-6 sm:py-8">
+    <div className="min-h-[calc(100vh-64px)] bg-transparent text-[#0F172A] font-inter py-6 sm:py-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         
         {/* Eyebrow Header */}

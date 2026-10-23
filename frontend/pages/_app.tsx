@@ -9,12 +9,12 @@ import OfflineIndicator from '../components/common/OfflineIndicator';
 import AppShell from '../components/AppShell';
 import ConnectionStatus from '../components/common/ConnectionStatus';
 import Head from 'next/head';
-import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
+import { Manrope, Inter } from 'next/font/google';
 
-const plusJakartaSans = Plus_Jakarta_Sans({ 
+const manrope = Manrope({ 
   subsets: ['latin'], 
   weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-jakarta',
+  variable: '--font-manrope',
   display: 'swap',
 });
 
@@ -78,7 +78,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
     <ErrorBoundary>
       <AuthProvider>
         <SocketProvider>
-          <div className={`${plusJakartaSans.variable} ${inter.variable}`}>
+          <div className={`${manrope.variable} ${inter.variable} font-sans`}>
             <Head>
               <title>CampusPlay - University Sports Booking</title>
               <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />

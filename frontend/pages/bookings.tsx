@@ -20,8 +20,8 @@ function Bookings() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#F3F7FC] text-[#0F172A] font-inter py-6 sm:py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+    <div className="w-full text-[#0F172A] font-inter py-2">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Compact Header */}
         <div className="mb-6 text-center max-w-xl mx-auto">

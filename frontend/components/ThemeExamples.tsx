@@ -549,7 +549,7 @@ export const FormExample = () => {
   );
 };
 
-export default {
+const ThemeExamples = {
   ButtonExamples,
   CardExamples,
   NavbarExample,
@@ -565,3 +565,5 @@ export default {
   InlineStyleExamples,
   FormExample,
 };
+
+export default ThemeExamples;

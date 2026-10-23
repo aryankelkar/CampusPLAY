@@ -15,6 +15,7 @@ import equipmentBookingRoutes from './routes/equipmentBookingRoutes.js';
 import facilityRoutes from './routes/facilityRoutes.js';
 import timetableRoutes from './routes/timetableRoutes.js';
 import { seedDefaultFacilities } from './services/facilityService.js';
+import { seedDefaultEquipment } from './services/equipmentService.js';
 import { initializeSocket } from './services/socketService.js';
 
 dotenv.config();
@@ -76,6 +77,7 @@ initializeSocket(io);
 // DB
 connectDB().then(() => {
   seedDefaultFacilities();
+  seedDefaultEquipment();
 });
 
 // Middlewares
@@ -121,7 +123,7 @@ app.use('/api/timetables', timetableRoutes);
 app.use('/timetables', timetableRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+app.get(['/api/health', '/health'], (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // Root route (friendly message)
 app.get('/', (req, res) => {

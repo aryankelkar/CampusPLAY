@@ -8,10 +8,10 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        dmSans: ['var(--font-dm-sans)', 'system-ui', 'sans-serif'],
-        inter: ['var(--font-inter)', 'sans-serif'],
-        poppins: ['var(--font-poppins)', 'sans-serif'],
-        sans: ['var(--font-dm-sans)', 'system-ui', '-apple-system', 'sans-serif'],
+        manrope: ['var(--font-manrope)', 'system-ui', 'sans-serif'],
+        inter: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        jakarta: ['var(--font-manrope)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-manrope)', 'var(--font-inter)', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         // 🎨 Premium Sports & University Theme - CampusPlay

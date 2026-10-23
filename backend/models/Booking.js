@@ -72,6 +72,8 @@ const bookingSchema = new mongoose.Schema(
 
 // Regular index for query performance
 bookingSchema.index({ ground: 1, date: 1, status: 1 });
+bookingSchema.index({ facility: 1, date: 1, status: 1 });
+bookingSchema.index({ date: 1, timeSlots: 1, status: 1 });
 bookingSchema.index({ student: 1, status: 1 });
 
 const Booking = mongoose.model('Booking', bookingSchema);

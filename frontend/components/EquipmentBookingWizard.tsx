@@ -60,8 +60,8 @@ export default function EquipmentBookingWizard({ initialItem, isOpen, onClose, o
         if (initialItem) {
           const matched = eqList.find((i: EquipmentItem) => i._id === initialItem._id);
           setSelectedItem(matched || initialItem);
-        } else if (eqList.length > 0 && !selectedItem) {
-          setSelectedItem(eqList[0]);
+        } else {
+          setSelectedItem((prev) => prev || eqList[0] || null);
         }
       })
       .catch(() => {})
@@ -80,7 +80,7 @@ export default function EquipmentBookingWizard({ initialItem, isOpen, onClose, o
     if (!returnTime && TIME_SLOTS.length > 1) {
       setReturnTime(TIME_SLOTS[1]);
     }
-  }, [date]);
+  }, [date, collectionTime, returnTime]);
 
   // Reset wizard state on close
   const handleClose = () => {
