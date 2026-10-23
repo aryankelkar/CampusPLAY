@@ -17,10 +17,10 @@ import {
   Menu,
   X,
   Dumbbell,
-  Trophy,
   Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import CampusPlayLogo from './CampusPlayLogo';
 
 export default function Navbar() {
   const router = useRouter();
@@ -108,7 +108,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-[12px] z-[1000] w-full px-3 sm:px-6 mb-2 sm:mb-3 font-jakarta transition-all duration-200">
       <div 
-        className={`relative mx-auto max-w-[1536px] h-[64px] sm:h-[68px] px-3.5 sm:px-5 flex items-center justify-between transition-all duration-300 rounded-[20px] backdrop-blur-md backdrop-saturate-150 ${
+        className={`relative mx-auto max-w-[1536px] h-[70px] sm:h-[76px] lg:h-[80px] px-3.5 sm:px-6 flex items-center justify-between transition-all duration-300 rounded-[20px] backdrop-blur-md backdrop-saturate-150 ${
           scrolled 
             ? 'bg-white/95 border border-[#CBD5E1]/90 shadow-[0_10px_30px_-5px_rgba(15,23,42,0.12),0_20px_40px_-15px_rgba(37,99,235,0.08),inset_0_1px_1px_rgba(255,255,255,1)]'
             : 'bg-white/85 border border-white/80 ring-1 ring-slate-900/5 shadow-[0_8px_25px_-5px_rgba(15,23,42,0.08),0_15px_30px_-10px_rgba(37,99,235,0.05),inset_0_1px_2px_rgba(255,255,255,0.95)]'
@@ -120,26 +120,16 @@ export default function Navbar() {
         {/* Subtle Athletic Accent Underline */}
         <div className="absolute bottom-0 inset-x-8 h-[1px] bg-gradient-to-r from-transparent via-[#2563EB]/20 to-transparent pointer-events-none" />
 
-        {/* LEFT: ATHLETIC CREST & CAMPUSPLAY BRAND */}
-        <Link 
-          href="/" 
-          className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] rounded-xl p-1" 
-          title="CampusPlay Home"
-          onClick={handleNavClick}
-        >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-[11px] bg-gradient-to-br from-[#2563EB] via-[#1D4ED8] to-[#1E40AF] flex items-center justify-center text-white shadow-[0_3px_10px_rgba(37,99,235,0.35),inset_0_1px_1px_rgba(255,255,255,0.4)] group-hover:scale-105 group-hover:shadow-[0_4px_14px_rgba(37,99,235,0.45)] transition-all duration-200">
-            <Trophy size={17} className="text-white drop-shadow-xs" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-base sm:text-lg font-black tracking-tight text-[#0F172A] uppercase leading-none font-sans">
-              Campus<span className="text-[#2563EB]">Play</span>
-            </span>
-            <span className="text-[9px] font-extrabold tracking-widest text-[#52657A] uppercase leading-none mt-1 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-              University Sports
-            </span>
-          </div>
-        </Link>
+        {/* LEFT: OFFICIAL CAMPUSPLAY BRAND LOGO (PROMINENT & BOLD) */}
+        <div className="flex items-center flex-shrink-0 py-1">
+          <CampusPlayLogo 
+            variant="full" 
+            priority={true}
+            onClick={handleNavClick}
+            className="w-[170px] sm:w-[210px] md:w-[255px] lg:w-[290px] xl:w-[315px]"
+            imgClassName="hover:opacity-90 transition-opacity"
+          />
+        </div>
 
         {/* CENTER: DESKTOP SEGMENTED DOCK */}
         <nav className="hidden md:flex items-center p-1 bg-[#F1F5F9]/70 backdrop-blur-xs rounded-[16px] border border-[#E2E8F0]/80 shadow-[inset_0_1px_2px_rgba(148,163,184,0.12)]" aria-label="Main Navigation">
@@ -397,6 +387,12 @@ export default function Navbar() {
           />
           <div className="md:hidden absolute left-4 right-4 top-20 z-50 p-4 rounded-[16px] bg-white border border-[#DCE6F0] shadow-[7px_7px_18px_rgba(148,163,184,0.18),-7px_-7px_18px_rgba(255,255,255,0.9)] animate-fade-in max-h-[calc(100vh-6rem)] overflow-y-auto">
             <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between pb-3 mb-2 border-b border-[#E2E8F0] px-1">
+                <CampusPlayLogo variant="full" className="w-[145px]" onClick={handleNavClick} />
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#E0EDFF] text-[#1D4ED8] border border-[#BFDBFE]">
+                  Athletics
+                </span>
+              </div>
               {user && (
                 <div className="px-4 py-3 rounded-[12px] bg-[#EDF4FB] border border-[#DCE6F0] mb-2">
                   <p className="text-sm font-bold text-[#0F172A]">{user?.name || 'User'}</p>

@@ -6,6 +6,7 @@ import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff, CheckCir
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { ADMIN_EMAIL, ALLOWED_EMAIL_DOMAIN } from '../constants';
+import CampusPlayLogo from '../components/CampusPlayLogo';
 
 export default function Login() {
   const router = useRouter();
@@ -74,11 +75,10 @@ export default function Login() {
 
           {/* Top Brand Tag */}
           <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-extrabold uppercase tracking-widest bg-[#2563EB] text-white px-3 py-1 rounded-lg shadow-sm">
-                CampusPlay
-              </span>
-              <span className="w-2 h-2 rounded-full bg-[#38BDF8] animate-pulse" />
+            <div className="mb-4">
+              <div className="inline-flex items-center bg-white/95 backdrop-blur-md rounded-xl px-3 py-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-white/60">
+                <CampusPlayLogo variant="full" className="w-[145px]" />
+              </div>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
               Campus sports,<br />simplified.

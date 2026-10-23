@@ -63,12 +63,16 @@ export default function Document() {
           }}
         />
 
-        {/* Favicon and app icons */}
-        <link rel="icon" href="/logo.png" />
-        <link rel="apple-touch-icon" href="/logo.png" />
+        {/* Favicon and brand icons derived from official CampusPlay athletic emblem */}
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#1E40AF" />
         
         {/* Meta tags */}
-        <meta name="description" content="CampusPlay - Your campus sports booking platform" />
+        <meta name="description" content="CampusPlay - University Sports Grounds, Scheduling & Equipment System" />
       </Head>
       <body>
         <Main />
