@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/router';
 import api from '../lib/api';
 import AdminTabs from './AdminTabs';
 import ConfirmModal from './common/ConfirmModal';
@@ -6,7 +7,7 @@ import Loader from './common/Loader';
 import EmptyState from './common/EmptyState';
 import StatusTag from './common/StatusTag';
 import AcademicVerificationPanel from './timetable/AcademicVerificationPanel';
-import { getDisplayTime } from '../utils/helpers';
+import { getDisplayTime, getTodayDate } from '../utils/helpers';
 import { 
   ChevronDown, 
   ChevronUp, 
@@ -18,9 +19,12 @@ import {
   MapPin,
   Calendar,
   Clock,
+  History,
   ShieldCheck,
-  Loader2
+  Loader2,
+  ArrowUpDown
 } from 'lucide-react';
+import { sortBookings, SortDateOption } from '../utils/dateSorting';
 
 interface Booking {
   _id: string;
@@ -74,15 +78,38 @@ export default function AdminBookingList({
   emptySubtitle,
   showActions = 'pending'
 }: AdminBookingListProps) {
+  const router = useRouter();
   const [rows, setRows] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(false);
+  const [timeScope, setTimeScope] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [sortBy, setSortBy] = useState<SortDateOption>('event-desc');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<{ 
     id: string; 
     action: 'approve' | 'reject' | 'pending' 
   } | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const todayStr = useMemo(() => getTodayDate(), []);
+
+  const upcomingList = useMemo(() => {
+    return rows.filter((r) => !r.date || r.date >= todayStr);
+  }, [rows, todayStr]);
+
+  const pastList = useMemo(() => {
+    return rows.filter((r) => r.date && r.date < todayStr);
+  }, [rows, todayStr]);
+
+  const currentScopeRows = useMemo(() => {
+    if (timeScope === 'upcoming') return upcomingList;
+    if (timeScope === 'past') return pastList;
+    return rows;
+  }, [timeScope, upcomingList, pastList, rows]);
+
+  const sortedRows = useMemo(() => {
+    return sortBookings(currentScopeRows, sortBy);
+  }, [currentScopeRows, sortBy]);
 
   const load = useCallback(async () => {
     try {
@@ -147,17 +174,117 @@ export default function AdminBookingList({
         {/* Main Card Workspace */}
         <div className="bg-white rounded-[22px] border border-[#E8EEF5] p-5 sm:p-7 shadow-[6px_6px_18px_rgba(148,163,184,0.14),-6px_-6px_18px_rgba(255,255,255,0.9)]">
           
-          <div className="flex justify-center mb-6">
-            <AdminTabs />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-5">
+            <AdminTabs 
+              activeStatus={statusFilter}
+              onStatusChange={(status) => {
+                router.push({
+                  pathname: '/admin/dashboard',
+                  query: status === 'all' ? {} : { status: status.toLowerCase() }
+                });
+              }}
+            />
+
+            <div className="relative min-w-[200px]">
+              <select 
+                aria-label="Sort bookings by date" 
+                className="select text-xs font-semibold py-2 !pl-8.5 pr-7 h-[38px] w-full rounded-[12px] border border-[#DCE6F0] bg-white text-[#0F172A] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 transition-all shadow-xs cursor-pointer" 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value as SortDateOption)}
+              >
+                <option value="event-desc">Event Date: Latest First</option>
+                <option value="event-asc">Event Date: Earliest First</option>
+                <option value="created-desc">Request Date: Newest First</option>
+                <option value="created-asc">Request Date: Oldest First</option>
+              </select>
+              <ArrowUpDown size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#2563EB] pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Time Scope Tabs: Upcoming vs Past vs All */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 p-2 bg-[#F8FAFC] rounded-[18px] border border-[#E2E8F0]">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setTimeScope('upcoming')}
+                className={`flex-1 sm:flex-initial px-4 py-2 rounded-[12px] text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  timeScope === 'upcoming'
+                    ? 'bg-[#2563EB] text-white shadow-xs'
+                    : 'text-[#52657A] hover:text-[#0F172A] hover:bg-white bg-transparent'
+                }`}
+              >
+                <Clock size={14} />
+                <span>Upcoming & Today</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  timeScope === 'upcoming' ? 'bg-white/25 text-white' : 'bg-[#E2E8F0] text-[#0F172A]'
+                }`}>
+                  {upcomingList.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTimeScope('past')}
+                className={`flex-1 sm:flex-initial px-4 py-2 rounded-[12px] text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  timeScope === 'past'
+                    ? 'bg-[#2563EB] text-white shadow-xs'
+                    : 'text-[#52657A] hover:text-[#0F172A] hover:bg-white bg-transparent'
+                }`}
+              >
+                <History size={14} />
+                <span>Past Bookings</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  timeScope === 'past' ? 'bg-white/25 text-white' : 'bg-[#E2E8F0] text-[#0F172A]'
+                }`}>
+                  {pastList.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTimeScope('all')}
+                className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-[12px] text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  timeScope === 'all'
+                    ? 'bg-[#2563EB] text-white shadow-xs'
+                    : 'text-[#52657A] hover:text-[#0F172A] hover:bg-white bg-transparent'
+                }`}
+              >
+                <span>All Records</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  timeScope === 'all' ? 'bg-white/25 text-white' : 'bg-[#E2E8F0] text-[#0F172A]'
+                }`}>
+                  {rows.length}
+                </span>
+              </button>
+            </div>
+
+            <div className="text-[11px] font-semibold text-[#64748B] px-3 py-1 flex items-center gap-2 self-center sm:self-auto">
+              {timeScope === 'upcoming' ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Active & Future Slots ({upcomingList.length})</span>
+                </>
+              ) : timeScope === 'past' ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span>Past Records ({pastList.length})</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-[#2563EB]" />
+                  <span>All Records ({rows.length})</span>
+                </>
+              )}
+            </div>
           </div>
 
           {loading ? (
             <Loader className="py-8" />
-          ) : rows.length === 0 ? (
+          ) : sortedRows.length === 0 ? (
             <EmptyState title={emptyTitle} subtitle={emptySubtitle} />
           ) : (
             <div className="space-y-3">
-              {rows.map((r) => {
+              {sortedRows.map((r: Booking) => {
                 const isExpanded = Boolean(expanded[r._id]);
                 const studentName = r.name || r.student?.name || '-';
                 const studentRoll = r.roll || r.student?.roll || '';

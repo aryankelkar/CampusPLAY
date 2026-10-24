@@ -1,18 +1,18 @@
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/ProtectedRoute';
-import AdminBookingList from '../../components/AdminBookingList';
 
 export default function ApprovedPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/admin/dashboard?status=approved');
+  }, [router]);
+
   return (
     <ProtectedRoute role="admin">
-      <div className="px-4 py-6">
-        <AdminBookingList
-          statusFilter="Approved"
-          title="Admin • Approved Bookings"
-          subtitle="Approved bookings overview"
-          emptyTitle="No approved bookings"
-          emptySubtitle="Approved bookings will appear here"
-          showActions="approved"
-        />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-sm text-[#52657A] font-semibold">Redirecting to Dashboard...</div>
       </div>
     </ProtectedRoute>
   );

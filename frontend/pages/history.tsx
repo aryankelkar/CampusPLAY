@@ -7,8 +7,9 @@ import { ListSkeleton } from '../components/common/LoadingSkeleton';
 import { BOOKING_STATUS } from '../constants';
 import { getTodayDate, getMonthYearLabel } from '../utils/helpers';
 import { useSocket } from '../context/SocketContext';
-import { Search, X, CalendarCheck, Sparkles, Filter, AlertCircle, Dumbbell, PackageCheck, Clock, Calendar, RotateCcw, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Search, X, CalendarCheck, Sparkles, Filter, AlertCircle, Dumbbell, PackageCheck, Clock, Calendar, RotateCcw, ShieldCheck, CheckCircle2, ArrowUpDown } from 'lucide-react';
 import StudentEquipmentReturnModal from '../components/StudentEquipmentReturnModal';
+import { sortBookings, SortDateOption } from '../utils/dateSorting';
 
 export default function HistoryPage() {
   return (
@@ -23,8 +24,10 @@ function BookingHistory() {
   const [groundBookings, setGroundBookings] = useState<any[]>([]);
   const [equipmentBookings, setEquipmentBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [timeScope, setTimeScope] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [filter, setFilter] = useState<'all' | 'ground' | 'equipment' | 'pending' | 'approved' | 'issued' | 'returned' | 'rejected' | 'cancelled'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortDateOption>('event-desc');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -171,43 +174,72 @@ function BookingHistory() {
   };
 
   const combinedBookings = useMemo(() => {
-    return [...groundBookings, ...equipmentBookings].sort((a, b) => {
-      return new Date(b.createdAt || b.date).getTime() - new Date(a.createdAt || a.date).getTime();
-    });
+    return [...groundBookings, ...equipmentBookings];
   }, [groundBookings, equipmentBookings]);
 
-  const filteredBookings = useMemo(() => {
-    if (filter === 'ground') return combinedBookings.filter(b => b.itemType === 'ground');
-    if (filter === 'equipment') return combinedBookings.filter(b => b.itemType === 'equipment');
-    if (filter === 'pending') return combinedBookings.filter(b => b.status === 'Pending');
-    if (filter === 'approved') return combinedBookings.filter(b => b.status === 'Approved' || b.status === 'Ready for Collection');
-    if (filter === 'issued') return combinedBookings.filter(b => b.status === 'Issued' || b.status === 'Return Requested');
-    if (filter === 'returned') return combinedBookings.filter(b => b.status === 'Returned' || b.status === 'Return Issue');
-    if (filter === 'rejected') return combinedBookings.filter(b => b.status === 'Rejected');
-    if (filter === 'cancelled') return combinedBookings.filter(b => b.status === 'Cancelled');
+  const todayStr = useMemo(() => getTodayDate(), []);
+
+  const upcomingBookings = useMemo(() => {
+    return combinedBookings.filter((b) => {
+      // Actively held equipment belongs to active scope
+      if (b.itemType === 'equipment' && (b.status === 'Issued' || b.status === 'Return Requested')) {
+        return true;
+      }
+      return !b.date || b.date >= todayStr;
+    });
+  }, [combinedBookings, todayStr]);
+
+  const pastBookings = useMemo(() => {
+    return combinedBookings.filter((b) => {
+      if (b.itemType === 'equipment' && (b.status === 'Issued' || b.status === 'Return Requested')) {
+        return false;
+      }
+      return b.date && b.date < todayStr;
+    });
+  }, [combinedBookings, todayStr]);
+
+  const currentScopeList = useMemo(() => {
+    if (timeScope === 'upcoming') return upcomingBookings;
+    if (timeScope === 'past') return pastBookings;
     return combinedBookings;
-  }, [combinedBookings, filter]);
+  }, [timeScope, upcomingBookings, pastBookings, combinedBookings]);
+
+  const filteredBookings = useMemo(() => {
+    let list = currentScopeList;
+    if (filter === 'ground') list = list.filter(b => b.itemType === 'ground');
+    else if (filter === 'equipment') list = list.filter(b => b.itemType === 'equipment');
+    else if (filter === 'pending') list = list.filter(b => b.status === 'Pending');
+    else if (filter === 'approved') list = list.filter(b => b.status === 'Approved' || b.status === 'Ready for Collection');
+    else if (filter === 'issued') list = list.filter(b => b.status === 'Issued' || b.status === 'Return Requested');
+    else if (filter === 'returned') list = list.filter(b => b.status === 'Returned' || b.status === 'Return Issue');
+    else if (filter === 'rejected') list = list.filter(b => b.status === 'Rejected');
+    else if (filter === 'cancelled') list = list.filter(b => b.status === 'Cancelled');
+    return list;
+  }, [currentScopeList, filter]);
 
   const searchedBookings = useMemo(() => {
-    if (!searchQuery.trim()) return filteredBookings;
-    const q = searchQuery.toLowerCase();
-    return filteredBookings.filter((b) => {
-      if (b.itemType === 'ground') {
-        return (
-          b.game?.toLowerCase().includes(q) ||
-          b.ground?.toLowerCase().includes(q) ||
-          b.date?.toLowerCase().includes(q) ||
-          b.time?.toLowerCase().includes(q)
-        );
-      } else {
-        return (
-          b.equipmentName?.toLowerCase().includes(q) ||
-          b.equipmentCategory?.toLowerCase().includes(q) ||
-          b.date?.toLowerCase().includes(q)
-        );
-      }
-    });
-  }, [filteredBookings, searchQuery]);
+    let list = filteredBookings;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = filteredBookings.filter((b) => {
+        if (b.itemType === 'ground') {
+          return (
+            b.game?.toLowerCase().includes(q) ||
+            b.ground?.toLowerCase().includes(q) ||
+            b.date?.toLowerCase().includes(q) ||
+            b.time?.toLowerCase().includes(q)
+          );
+        } else {
+          return (
+            b.equipmentName?.toLowerCase().includes(q) ||
+            b.equipmentCategory?.toLowerCase().includes(q) ||
+            b.date?.toLowerCase().includes(q)
+          );
+        }
+      });
+    }
+    return sortBookings(list, sortBy);
+  }, [filteredBookings, searchQuery, sortBy]);
 
   return (
     <div className="w-full text-[#0F172A] font-inter py-2">
@@ -235,6 +267,83 @@ function BookingHistory() {
           <p className="text-xs sm:text-sm text-[#52657A] font-normal leading-relaxed">
             View and manage your sports ground bookings and equipment requests.
           </p>
+        </div>
+
+        {/* Time Scope Tabs: Active & Upcoming vs Past Bookings vs All */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4 p-2 bg-[#F8FAFC] rounded-[18px] border border-[#E2E8F0]">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => { setTimeScope('upcoming'); setFilter('all'); }}
+              className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-[12px] text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                timeScope === 'upcoming'
+                  ? 'bg-[#2563EB] text-white shadow-xs'
+                  : 'text-[#52657A] hover:text-[#0F172A] hover:bg-white bg-transparent'
+              }`}
+            >
+              <Clock size={14} />
+              <span>Active & Upcoming</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                timeScope === 'upcoming' ? 'bg-white/25 text-white' : 'bg-[#E2E8F0] text-[#0F172A]'
+              }`}>
+                {upcomingBookings.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setTimeScope('past'); setFilter('all'); }}
+              className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-[12px] text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                timeScope === 'past'
+                  ? 'bg-[#2563EB] text-white shadow-xs'
+                  : 'text-[#52657A] hover:text-[#0F172A] hover:bg-white bg-transparent'
+              }`}
+            >
+              <CalendarCheck size={14} />
+              <span>Past Bookings</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                timeScope === 'past' ? 'bg-white/25 text-white' : 'bg-[#E2E8F0] text-[#0F172A]'
+              }`}>
+                {pastBookings.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setTimeScope('all'); setFilter('all'); }}
+              className={`flex-1 sm:flex-initial px-3.5 py-2.5 rounded-[12px] text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                timeScope === 'all'
+                  ? 'bg-[#2563EB] text-white shadow-xs'
+                  : 'text-[#52657A] hover:text-[#0F172A] hover:bg-white bg-transparent'
+              }`}
+            >
+              <span>All History</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                timeScope === 'all' ? 'bg-white/25 text-white' : 'bg-[#E2E8F0] text-[#0F172A]'
+              }`}>
+                {combinedBookings.length}
+              </span>
+            </button>
+          </div>
+
+          <div className="text-[11px] font-semibold text-[#64748B] px-3 py-1 flex items-center gap-2 self-center sm:self-auto">
+            {timeScope === 'upcoming' ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Active Slots ({upcomingBookings.length})</span>
+              </>
+            ) : timeScope === 'past' ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>Past Records ({pastBookings.length})</span>
+              </>
+            ) : (
+              <>
+                <span className="w-2 h-2 rounded-full bg-[#2563EB]" />
+                <span>All Records ({combinedBookings.length})</span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Filter Pills & Search */}
@@ -266,16 +375,33 @@ function BookingHistory() {
               ))}
             </div>
 
-            {/* Search Input */}
-            <div className="relative w-full sm:w-64">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
-              <input
-                type="text"
-                placeholder="Search history..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs font-bold text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
-              />
+            {/* Search & Sort Controls */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+              <div className="relative w-full sm:w-60">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+                <input
+                  type="text"
+                  placeholder="Search history..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs font-bold text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                />
+              </div>
+
+              <div className="relative w-full sm:w-auto min-w-[195px]">
+                <select
+                  aria-label="Sort history by date"
+                  className="select text-xs font-semibold py-1.5 !pl-8.5 pr-7 h-[36px] w-full rounded-xl border border-[#CBD5E1] bg-white text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#2563EB] cursor-pointer"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortDateOption)}
+                >
+                  <option value="event-desc">Event Date: Latest First</option>
+                  <option value="event-asc">Event Date: Earliest First</option>
+                  <option value="created-desc">Request Date: Newest First</option>
+                  <option value="created-asc">Request Date: Oldest First</option>
+                </select>
+                <ArrowUpDown size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#2563EB] pointer-events-none" />
+              </div>
             </div>
           </div>
         </div>
@@ -286,13 +412,33 @@ function BookingHistory() {
         ) : searchedBookings.length === 0 ? (
           <div className="p-12 text-center bg-white border border-[#DCE6F0] rounded-[20px] max-w-md mx-auto">
             <CalendarCheck size={40} className="mx-auto mb-3 text-[#94A3B8]" />
-            <h3 className="text-base font-extrabold text-[#0F172A] mb-1">No reservations found</h3>
-            <p className="text-xs text-[#64748B] mb-4">You have no active or historical bookings matching your filter.</p>
-            <div className="flex gap-2 justify-center">
-              <Link href="/bookings" className="px-4 py-2 bg-[#2563EB] text-white text-xs font-bold rounded-xl shadow-xs">
+            <h3 className="text-base font-extrabold text-[#0F172A] mb-1">
+              {timeScope === 'upcoming' 
+                ? 'No Upcoming Reservations' 
+                : timeScope === 'past' 
+                  ? 'No Past Reservations' 
+                  : 'No Reservations Found'}
+            </h3>
+            <p className="text-xs text-[#64748B] mb-4">
+              {timeScope === 'upcoming'
+                ? "You have no upcoming or active reservations. Concluded or past bookings are stored in the Past Bookings tab."
+                : "You have no reservations matching your current filter criteria."}
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {timeScope === 'upcoming' && pastBookings.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => { setTimeScope('past'); setFilter('all'); }}
+                  className="px-4 py-2 bg-[#2563EB] text-white text-xs font-bold rounded-xl shadow-xs hover:bg-[#1D4ED8] transition-all cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <CalendarCheck size={13} />
+                  <span>View Past Bookings ({pastBookings.length})</span>
+                </button>
+              )}
+              <Link href="/bookings" className="px-4 py-2 bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] text-xs font-bold rounded-xl hover:bg-[#DBEAFE] transition-all">
                 Book a Ground
               </Link>
-              <Link href="/equipment" className="px-4 py-2 bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] text-xs font-bold rounded-xl">
+              <Link href="/equipment" className="px-4 py-2 bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] text-xs font-bold rounded-xl hover:bg-[#DBEAFE] transition-all">
                 Reserve Equipment
               </Link>
             </div>

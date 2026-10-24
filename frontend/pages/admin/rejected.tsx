@@ -1,18 +1,18 @@
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/ProtectedRoute';
-import AdminBookingList from '../../components/AdminBookingList';
 
 export default function RejectedPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/admin/dashboard?status=rejected');
+  }, [router]);
+
   return (
     <ProtectedRoute role="admin">
-      <div className="px-4 py-6">
-        <AdminBookingList
-          statusFilter="Rejected"
-          title="Admin • Rejected Bookings"
-          subtitle="Rejected bookings overview"
-          emptyTitle="No rejected bookings"
-          emptySubtitle="Rejected bookings will appear here"
-          showActions="rejected"
-        />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-sm text-[#52657A] font-semibold">Redirecting to Dashboard...</div>
       </div>
     </ProtectedRoute>
   );

@@ -18,10 +18,14 @@ import {
   Mail,
   GraduationCap,
   ShieldCheck,
-  Check
+  Check,
+  ArrowUpDown,
+  History
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import AdminEquipmentReturnModal from './AdminEquipmentReturnModal';
+import { sortBookings, SortDateOption } from '../utils/dateSorting';
+import { getTodayDate } from '../utils/helpers';
 
 type FilterType = 'all' | 'Pending' | 'Approved' | 'Issued' | 'Return Requested' | 'Returned' | 'Return Issue' | 'Cancelled';
 
@@ -30,10 +34,20 @@ export default function AdminEquipmentList() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [timeScope, setTimeScope] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState<SortDateOption>('event-desc');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [returnModalBooking, setReturnModalBooking] = useState<any | null>(null);
+
+  const todayStr = useMemo(() => getTodayDate(), []);
+
+  const currentScopeRequests = useMemo(() => {
+    if (timeScope === 'upcoming') return requests.filter((r) => !r.date || r.date >= todayStr);
+    if (timeScope === 'past') return requests.filter((r) => r.date && r.date < todayStr);
+    return requests;
+  }, [requests, timeScope, todayStr]);
 
   const fetchEquipmentBookings = async () => {
     try {
@@ -142,7 +156,7 @@ export default function AdminEquipmentList() {
   };
 
   const filteredRequests = useMemo(() => {
-    return requests.filter((r) => {
+    const list = currentScopeRequests.filter((r) => {
       let matchFilter = true;
       if (filter !== 'all') {
         if (filter === 'Approved') {
@@ -163,7 +177,9 @@ export default function AdminEquipmentList() {
 
       return matchFilter && matchSearch;
     });
-  }, [requests, filter, search]);
+
+    return sortBookings(list, sortBy);
+  }, [currentScopeRequests, filter, search, sortBy]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -206,6 +222,80 @@ export default function AdminEquipmentList() {
         </div>
       )}
 
+      {/* Time Scope Tabs: Upcoming vs Past Requests vs All */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-2 bg-white rounded-2xl border border-[#DCE6F0] shadow-xs">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setTimeScope('upcoming')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              timeScope === 'upcoming'
+                ? 'bg-[#2563EB] text-white shadow-xs'
+                : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9]'
+            }`}
+          >
+            <Clock size={13} />
+            <span>Upcoming & Today</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+              timeScope === 'upcoming' ? 'bg-white/20 text-white' : 'bg-[#EFF6FF] text-[#2563EB] font-bold'
+            }`}>
+              {requests.filter((r) => !r.date || r.date >= todayStr).length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTimeScope('past')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              timeScope === 'past'
+                ? 'bg-[#2563EB] text-white shadow-xs'
+                : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9]'
+            }`}
+          >
+            <History size={13} />
+            <span>Past Requests</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+              timeScope === 'past' ? 'bg-white/20 text-white' : 'bg-[#EFF6FF] text-[#2563EB] font-bold'
+            }`}>
+              {requests.filter((r) => r.date && r.date < todayStr).length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTimeScope('all')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              timeScope === 'all'
+                ? 'bg-[#2563EB] text-white shadow-xs'
+                : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9]'
+            }`}
+          >
+            <span>All Records</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+              timeScope === 'all' ? 'bg-white/20 text-white' : 'bg-[#EFF6FF] text-[#2563EB] font-bold'
+            }`}>
+              {requests.length}
+            </span>
+          </button>
+        </div>
+
+        <div className="text-[11px] font-semibold text-[#64748B] px-2 flex items-center gap-1.5 self-center sm:self-auto">
+          {timeScope === 'upcoming' ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Active requests ({requests.filter((r) => !r.date || r.date >= todayStr).length})</span>
+            </>
+          ) : timeScope === 'past' ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span>Historical records ({requests.filter((r) => r.date && r.date < todayStr).length})</span>
+            </>
+          ) : (
+            <span>All records ({requests.length})</span>
+          )}
+        </div>
+      </div>
+
       {/* Filter & Search Bar */}
       <div className="p-4 rounded-2xl bg-white border border-[#DCE6F0] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         
@@ -226,16 +316,33 @@ export default function AdminEquipmentList() {
           ))}
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-64">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
-          <input
-            type="text"
-            placeholder="Search student, item, roll, phone..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs font-bold text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
-          />
+        {/* Search & Sort Controls */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+          <div className="relative w-full sm:w-60">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+            <input
+              type="text"
+              placeholder="Search equipment..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-xs font-bold text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+            />
+          </div>
+
+          <div className="relative w-full sm:w-auto min-w-[195px]">
+            <select
+              aria-label="Sort equipment requests by date"
+              className="select text-xs font-semibold py-1.5 !pl-8.5 pr-7 h-[36px] w-full rounded-xl border border-[#CBD5E1] bg-white text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#2563EB] cursor-pointer"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortDateOption)}
+            >
+              <option value="event-desc">Event Date: Latest First</option>
+              <option value="event-asc">Event Date: Earliest First</option>
+              <option value="created-desc">Request Date: Newest First</option>
+              <option value="created-asc">Request Date: Oldest First</option>
+            </select>
+            <ArrowUpDown size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#2563EB] pointer-events-none" />
+          </div>
         </div>
       </div>
 
